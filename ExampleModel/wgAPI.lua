@@ -1,0 +1,132 @@
+--wgAPI (Name Pending I Hope) V0.01 PRERELEASE Build
+
+--Current list of shit i need to finish
+--(X)Change visible model parts for StagedWG
+--(X)Anim indexing for GranularWG
+--( )Weight gain and loss from food .w.
+
+--( )Head offset adjustment
+--( )Hitbox adjustment
+
+
+local maxWeight = 1000 -- The highest weight you can be
+local minWeight = 100 -- The lowest weight you can be
+local currentWeight = minWeight --how much you weigh currently
+
+local absWeight = 0 
+
+local weightAnims = {} -- each granular anim related to each weight stage
+local granularWeight = 0 -- how close are you to the next weight stage?
+
+local weightStages = {} -- list of lists of model parts associated with each stage
+local weightStage = 1 --what stage you are at (default 1)
+
+local headPos = {} -- the desired head position for each weight stage
+
+local function updateWeightStage() --Update current weight stage
+  
+  weightStage = math.clamp(weightStage,1,#weightStages) --clamp weight to valid values
+  
+  for stage in ipairs(weightStages) do --iterate through weightStages and every "size" in weightStages to ensure only the modelparts in the index equal to the current weightStage are visible
+    local size = weightStages[stage]
+
+    for part in ipairs(weightStages[stage]) do
+      size[part]:setVisible(weightStage == stage)
+    end
+  end
+	
+  for part in ipairs(weightStages[weightStage]) do --to ensure duplicate parts can be used in weight stages, double check the current stage to reenable anything mistakenly disabled by the last step .w.
+    weightStages[weightStage][part]:setVisible(true)
+  end
+
+	--an optimization can definitely be made here
+end
+
+local function updateGranularWG()
+	
+	local currentGranularAnim = weightAnims[weightStage]
+	if currentGranularAnim == "" then return end
+	
+	currentGranularAnim:play()
+	currentGranularAnim:setSpeed(0)
+		
+	granularAnimOffset = currentGranularAnim:getLength() * granularWeight
+	currentGranularAnim:setOffset(granularAnimOffset)
+end
+
+
+local function updateHitbox() 
+
+
+  --check if pehkui is installed
+  --check if player has operator
+  --check if pehcompi is installed
+  
+  --deal with this shit later
+
+
+  --i genuinely dont know what this does rn, probably useless
+  --relativeweight = math.floor(#weightStages * (mass-minMass/maxMass-minMass) + .5)
+  --weight = relativeweight
+
+  --pehcompi.changeScale(hitbox[weight])  --this changes the hitbox, dont worry about it
+end
+
+local function calculateProgress() -- determine progress value
+  currentWeight = math.clamp(currentWeight, minWeight,  maxWeight)
+  
+  local absWeight = (currentWeight-minWeight)/(maxWeight-minWeight) -- on a scale of 0 to 1, how fat are you?
+  local progress = (absWeight * (#weightStages-1)) + 1 --"weightStage + granularWeight"
+  
+  weightStage = math.floor(progress)
+  granularWeight = progress - weightStage
+  
+  updateWeightStage()
+  updateGranularWG()
+end
+
+function NewWeightStage(parts,granularAnim,headOffset,hitboxWidth,hitBoxHeight) --makes a new weight stage
+	
+	
+	if type(parts)~="table" then return end --verify "parts" is a table so everything doesnt fucking EXPLODE
+	table.insert(weightStages,parts) --shove parts at the end of the list
+	
+	if granularAnim == nil then granularAnim = "" end
+	table.insert(weightAnims,granularAnim) --shove an animation in the granular list
+	--insert head offset relevant code here
+	
+	--insert hitbox relevant code here
+end
+
+function SetWeightStage(val) --forces the weight to a value --marked for change
+	weightStage = val
+end
+
+function GetWeightStage() --return current weight stage
+	return weightStage
+end
+
+function GetWeightStages() --return weight stage array
+  return weightStages
+end
+
+function NudgeWeightStage(input) --shifts weight by an amount
+  weightStage = weightStage + input
+  calculateProgress()
+end
+
+function NudgeWeight(input) --shifts weight by an amount
+  currentWeight = currentWeight + input * 10
+  calculateProgress() --Marked for change
+end
+
+function events.tick()
+  --Weight Stage
+  --updateWeightStage() --Do i need this?
+end
+
+function events.entity_init()
+	updateWeightStage()
+end
+--DEBUG
+
