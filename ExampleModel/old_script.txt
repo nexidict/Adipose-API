@@ -1,0 +1,639 @@
+-- Weight gain script by SyntaxScales
+
+local syncPingTimer = 0 -- Used to sync the weight variables with players that joined a server and haven't gotten pinged yet
+
+-- Weight variables
+local weight = 0 -- Weight is stored as a float from 0 to 1. 0 is minimum weight, while 1 is maximum
+local weightVariant = -1 -- Determines which set of manually-designed fat parts get toggled
+local macro = false -- Fun feature
+local preGUIScale
+
+-- Eating variables
+local prevFood
+local prevSaturation
+
+local weightPerHungerPoint = 0.002 -- Modify this if you want to increase/decrease the amount gained by eating
+
+-- Effect variables
+local cameraShakeDuration = 0
+local cameraShakeMaxDuration = 0
+local cameraShakeIntensity = 0
+local cameraShakeUpdateTicker = 0 -- Used by receivers to detect updates to screen shake
+
+local cameraShakeReceiverTable = {}
+
+local timeNotGrounded = 0 -- Used to shake grouond after certain number of ticks
+local stepTime = 0
+local wasSleeping = false
+
+-- Jiggle physics initialization
+local tailPhysics = require('tail') -------------------------------- MODIFY PAST HERE TO ADD JIGGLE PHYSICS TO SPECIFIC MODEL PARTS --------------------------------
+
+tailPhysics.new(models.model.TailW0):setConfig { stiff = 0.14, idleSpeed = vec(0.025, 0.1, 0), idleStrength = vec(1, 7, 0) }
+tailPhysics.new(models.model.TailW1):setConfig { stiff = 0.14, idleSpeed = vec(0.025, 0.1, 0), idleStrength = vec(1, 7, 0) }
+tailPhysics.new(models.model.TailW3):setConfig { stiff = 0.14, idleSpeed = vec(0.025, 0.1, 0), idleStrength = vec(1, 7, 0) }
+tailPhysics.new(models.model.TailW4):setConfig { bounce = 0.08, stiff = 0.14, idleSpeed = vec(0.025, 0.1, 0), idleStrength = vec(1, 7, 0) }
+
+tailPhysics.new(models.model.BodyW0.BellyW0):setConfig { bounce = 0.25, stiff = 0.4, enableWag = {false} }
+tailPhysics.new(models.model.BodyW1.BellyW1):setConfig { bounce = 0.25, stiff = 0.4, enableWag = {false} }
+tailPhysics.new(models.model.BodyW2.BellyW2):setConfig { bounce = 0.2, stiff = 0.3, enableWag = {false} }
+tailPhysics.new(models.model.BodyW3.BellyW3):setConfig { bounce = 0.2, stiff = 0.25, enableWag = {false} }
+tailPhysics.new(models.model.BodyW4.BellyW4):setConfig { bounce = 0.2, stiff = 0.25, enableWag = {false} }
+
+tailPhysics.new(models.model.LeftLegW1.LeftUpperLegW1.LeftButtW1):setConfig { bounce = 0.25, stiff = 0.4, enableWag = {false} }
+tailPhysics.new(models.model.LeftLegW2.LeftUpperLegW2.LeftButtW2):setConfig { bounce = 0.2, stiff = 0.3, enableWag = {false} }
+tailPhysics.new(models.model.LeftLegW3.LeftUpperLegW3.LeftButtW3):setConfig { bounce = 0.2, stiff = 0.25, enableWag = {false} }
+tailPhysics.new(models.model.LeftLegW4.LeftUpperLegW4.LeftButtW4):setConfig { bounce = 0.2, stiff = 0.25, enableWag = {false} }
+
+tailPhysics.new(models.model.RightLegW1.RightUpperLegW1.RightButtW1):setConfig { bounce = 0.25, stiff = 0.4, enableWag = {false} }
+tailPhysics.new(models.model.RightLegW2.RightUpperLegW2.RightButtW2):setConfig { bounce = 0.2, stiff = 0.3, enableWag = {false} }
+tailPhysics.new(models.model.RightLegW3.RightUpperLegW3.RightButtW3):setConfig { bounce = 0.2, stiff = 0.25, enableWag = {false} }
+tailPhysics.new(models.model.RightLegW4.RightUpperLegW4.RightButtW4):setConfig { bounce = 0.2, stiff = 0.25, enableWag = {false} }
+
+-- Sound variables
+local gurgleSoundTimer = 0
+local sloshSoundTimer = 0
+local prevYaw = 0
+local hungrySoundTimer = 0
+local attenuationModifier = 1 -- Modifies distance from which all sounds can be heard
+
+-- Initialize the entity
+function events.entity_init()
+    -- Hide vanilla parts
+    vanilla_model.PLAYER:setVisible(false)
+    vanilla_model.ARMOR:setVisible(false)
+    vanilla_model.HELMET_ITEM:setVisible(true) -- Re-enables things like pumpkins on head
+    vanilla_model.CAPE:setVisible(false)
+    vanilla_model.ELYTRA:setVisible(false)
+    
+    models:setPrimaryRenderType("CUTOUT_CULL") -- Set rendering type for optimized performance. Prevents back faces from rendering
+
+    -- Initialize action wheel
+    local mainPage = action_wheel:newPage()
+    action_wheel:setPage(mainPage)
+    -- Create burp action
+    mainPage:newAction():title("Burp"):item("cooked_beef"):hoverColor(1, 1, 1):onLeftClick(function()
+        pings.burp()
+    end)
+    -- Create reduce action
+    mainPage:newAction():title("Reduce"):item("dried_kelp"):hoverColor(1, 0, 0):onLeftClick(function()
+        if (not macro) then
+            pings.setWeight(weight - 0.05)
+        end
+    end)
+    -- Create reset action
+    mainPage:newAction():title("Reset"):item("bone"):hoverColor(1, 0, 0):onLeftClick(function()
+        pings.setWeight(0)
+        pings.setMacro(false, true)
+        sounds:playSound("entity.player.burp", player:getPos(), 0.75, 0.75, false)
+        shakeCamera(0, 0)
+    end)
+    -- Create macro action
+    mainPage:newAction():title("Macro"):item("netherite_block"):hoverColor(0, 1, 0):onLeftClick(function()
+        pings.setMacro(not macro, true)
+        sounds:playSound("entity.player.burp", player:getPos(), 1, 1, false)
+        shakeCamera(0, 0)
+    end)
+    -- Create max action
+    mainPage:newAction():title("Max"):item("cake"):hoverColor(0, 1, 0):onLeftClick(function()
+        pings.setWeight(1)
+        sounds:playSound("entity.player.burp", player:getPos(), 0.75, 1, false)
+        shakeCamera(0, 0)
+    end)
+    -- Create gain action
+    mainPage:newAction():title("Gain"):item("cookie"):hoverColor(0, 1, 0):onLeftClick(function()
+        pings.setWeight(weight + 0.05)
+    end)
+
+    -- Initialize default eating values
+    prevFood = player:getFood()
+    prevSaturation = player:getSaturation()
+
+    -- Initialize sound update values
+    prevYaw = player:getBodyYaw()
+
+    -- Initialize default weight
+    setWeightVariant(0)
+end
+
+-- Called 20 times per second. Use for game logic-related queries
+function events.tick()
+    syncPingTimer = syncPingTimer + 1
+    if (syncPingTimer >= 80) then
+        pings.setWeight(weight)
+        pings.setMacro(macro, false)
+        syncPingTimer = 0
+    end
+
+    -- Adjust tail position when crouching
+    if (player:isCrouching()) then -------------------------------- MODIFY HERE TO ADJUST TAIL POSITIONING BASED ON CROUCHING --------------------------------
+        models.model.TailW0:setPos(0, 0, 3)
+        models.model.TailW1:setPos(0, 0, 3)
+        models.model.TailW3:setPos(0, 2, 6)
+        models.model.TailW4:setPos(0, 2, 6)
+    else
+        models.model.TailW0:setPos(0, 0, 0)
+        models.model.TailW1:setPos(0, 0, 0)
+        models.model.TailW3:setPos(0, 0, 0)
+        models.model.TailW4:setPos(0, 0, 0)
+    end
+
+    -- Gain weight through food consumption
+    if (player:getFood() > prevFood or player:getSaturation() > prevSaturation) then
+        local amount = player:getFood() - prevFood + player:getSaturation() - prevSaturation -- Get number of points increased
+        if (host:isHost()) then
+            pings.setWeight(weight + amount * weightPerHungerPoint) -- Weight gain speed per hunger notch
+        end
+        if (player:getFood() >= 20 and weightVariant >= 1) then
+            playBurpSound() -- Burp after topping off hunger
+        end
+    end
+    prevFood = player:getFood()
+    prevSaturation = player:getSaturation()
+
+    -- Cancel the fall time and play a water splash if landing in water
+    if (player:isInWater()) then
+        if (timeNotGrounded > 10 and weightVariant >= 3) then
+            waterSlamEffects()
+        end
+        timeNotGrounded = 0
+    end
+
+    -- Play jump/ground slam effect if not grounded after a moment
+    if (not player:isOnGround()) then
+        timeNotGrounded = timeNotGrounded + 1
+    else
+        if (timeNotGrounded > 20 and weight >= 0.65) then
+            groundSlamEffects()
+        elseif (timeNotGrounded > 9 and weight >= 0.65) then
+            jumpEffects()
+        end
+        timeNotGrounded = 0
+    end
+
+    -- Use a timer to determine step sound times
+    if (player:isOnGround()) then
+        stepTime = stepTime + player:getVelocity():length()
+    end
+    if (stepTime >= 1.625) then
+        stepTime = stepTime % 1.625
+        if (weight >= 0.65) then
+            stepEffects()
+        end
+    end
+
+    -- Play bed creak sound
+    if ((player:getPose() == "SLEEPING" and not wasSleeping) and weightVariant >= 4) then
+        sounds:playSound("block.stem.place", player:getPos(), 1, 0.3, false)
+        sounds:playSound("block.stem.fall", player:getPos(), 1, 0.2, false)
+    end
+    wasSleeping = player:getPose() == "SLEEPING"
+
+    updateSounds()
+
+    receiverUpdate()
+end
+
+-- Called every frame
+function events.render(delta, context)
+    -- Reduce arm movement strength while fat. Makes the arms feel weightier
+    local rot = vanilla_model.LEFT_ARM:getOriginRot()
+    models.model.LeftArmW3:setOffsetRot(-rot * 0.25) -------------------------------- MODIFY HERE TO REDUCE THE MAGNITUDE OF ARM SWING MOVEMENT WHILE FAT --------------------------------
+    models.model.LeftArmW4:setOffsetRot(-rot * 0.5)
+
+    rot = vanilla_model.RIGHT_ARM:getOriginRot()
+    models.model.RightArmW3:setOffsetRot(-rot * 0.25)
+    models.model.RightArmW4:setOffsetRot(-rot * 0.5)
+
+    -- Reduce leg movement strength while fat. Makes the legs clip less and feel weightier
+    rot = vanilla_model.LEFT_LEG:getOriginRot()
+    models.model.LeftLegW0:setOffsetRot(-rot * 0.15) -------------------------------- MODIFY HERE TO REDUCE THE MAGNITUDE OF LEG SWING MOVEMENT WHILE FAT --------------------------------
+    models.model.LeftLegW1:setOffsetRot(-rot * 0.4)
+    models.model.LeftLegW2:setOffsetRot(-rot * 0.7)
+    models.model.LeftLegW3:setOffsetRot(-rot * 0.9)
+    models.model.LeftLegW4:setOffsetRot(-rot * 0.9)
+
+    rot = vanilla_model.RIGHT_LEG:getOriginRot()
+    models.model.RightLegW0:setOffsetRot(-rot * 0.15)
+    models.model.RightLegW1:setOffsetRot(-rot * 0.4)
+    models.model.RightLegW2:setOffsetRot(-rot * 0.7)
+    models.model.RightLegW3:setOffsetRot(-rot * 0.9)
+    models.model.RightLegW4:setOffsetRot(-rot * 0.9)
+
+    -- Shake the camera
+    if (cameraShakeDuration > 0) then
+        cameraShakeDuration = cameraShakeDuration - delta
+        if (cameraShakeDuration < 0) then
+            cameraShakeDuration = 0
+        end
+        local percent = cameraShakeDuration / cameraShakeMaxDuration
+        renderer:setOffsetCameraPivot(math.random() * cameraShakeIntensity * percent, math.random() * cameraShakeIntensity * percent, math.random() * cameraShakeIntensity * percent)
+    else
+        renderer:setOffsetCameraPivot(0, 0, 0) -- Reset the camera when not shaking any more
+    end
+
+    -- Zoom camera out at larger sizes
+    if (not renderer:isFirstPerson()) then
+        renderer:setCameraPos(0, 0, (models.model:getScale().y - 1) * 2.5)
+    else
+        renderer:setCameraPos(0, 0, 0)
+    end
+
+    -- Render inventory GUI model smaller to fit
+    if (context == "MINECRAFT_GUI") then
+        preGUIScale = models.model:getScale()
+        if (weightVariant == 3) then
+            models.model:setScale(0.75)
+        elseif (weightVariant == 4) then
+            models.model:setScale(0.5)
+        end
+    end
+end
+
+function events.post_render(delta, context)
+    -- Reset model size after GUI scaling
+    if (context == "MINECRAFT_GUI") then
+        models.model:setScale(preGUIScale)
+    end
+end
+
+-- Updates model scale values and switches the weight variant
+function setWeight(amount)
+    weight = amount
+    if (weight < 0) then
+        weight = 0
+    elseif (weight > 1) then
+        weight = 1
+    end
+
+    local scaleAmount = 0
+    local scale = 1
+
+    if (weight >= 0.56) then
+        setWeightVariant(4)
+    elseif (weight >= 0.42) then
+        local scaleAmount = (weight - 0.42) / 0.14;
+        models.model.BodyW3.BellyW3:setScale(math.lerp(1, 1.2, scaleAmount)) -------------------------------- MODIFY HERE TO ADJUST BELLY SCALING BETWEEN WEIGHT STAGES --------------------------------
+
+        setWeightVariant(3)
+    elseif (weight >= 0.28) then
+        local scaleAmount = (weight - 0.28) / 0.14;
+        models.model.BodyW2.BellyW2:setScale(math.lerp(1, 1.1, scaleAmount)) -------------------------------- MODIFY HERE TO ADJUST BELLY SCALING BETWEEN WEIGHT STAGES --------------------------------
+
+        setWeightVariant(2)
+    elseif (weight >= 0.14) then
+        local scaleAmount = (weight - 0.14) / 0.14;
+        models.model.BodyW1.BellyW1:setScale(math.lerp(1, 1.1, scaleAmount)) -------------------------------- MODIFY HERE TO ADJUST BELLY SCALING BETWEEN WEIGHT STAGES --------------------------------
+
+        setWeightVariant(1)
+    else
+        local scaleAmount = weight / 0.14;
+        models.model.BodyW0.BellyW0:setScale(math.lerp(1, 1.2, scaleAmount)) -------------------------------- MODIFY HERE TO ADJUST BELLY SCALING BETWEEN WEIGHT STAGES --------------------------------
+
+        setWeightVariant(0)
+    end
+
+    -- Post-max weight variant scaling
+    local scaleAmount = math.clamp(weight - 0.56, 0, 1) / 0.44
+    local scale = math.lerp(1, 3, scaleAmount)
+    local reducedScale = math.lerp(1, 1.75, scaleAmount)
+    if (macro) then
+        scale = scale * 12
+        reducedScale = reducedScale * 10
+    end
+    models.model:setScale(scale) -------------------------------- MODIFY HERE TO ADJUST ENTIRE MODEL SCALING AT HUGE SIZES --------------------------------
+    -- De-scale the head and hands (since the head shouldn't grow larger. Only fatter)
+    models.model.Head:setScale(1 / scale * reducedScale)
+    if (macro) then
+        models.model.Head:setPos(0, (scale - 1) * 0.06, 0)
+    else
+        models.model.Head:setPos(0, (scale - 1) * 0.5, 0)
+    end
+    models.model.HeadW3:setScale(models.model.Head:getScale()) -------------------------------- MODIFY HERE TO ADJUST HEAD/ARM DE-SCALING AT HUGE SIZES --------------------------------
+    models.model.HeadW3:setPos(models.model.Head:getPos())
+    models.model.LeftArmW4.LeftHandW4:setScale(1 / scale * reducedScale)
+    models.model.RightArmW4.RightHandW4:setScale(1 / scale * reducedScale)
+end
+
+function pings.setWeight(amount)
+    setWeight(amount)
+end
+
+-- Make big
+function setMacro(value, resetWeight)
+    if (macro == value) then
+        return
+    end
+    macro = value
+
+    if (macro) then
+        attenuationModifier = 16
+        gurgleSoundTimer = 0
+        if (resetWeight) then
+            setWeight(1)
+        end
+    else
+        attenuationModifier = 1
+        if (resetWeight) then
+            setWeight(0)
+        end
+    end
+end
+
+function pings.setMacro(value, resetWeight)
+    setMacro(value, resetWeight)
+end
+
+-- Toggles model parts for manually created stages of model weight gain
+function setWeightVariant(variant)
+    if (weightVariant == variant) then
+        return
+    end
+    weightVariant = variant
+
+    -- Start by disabling every variant part
+    models.model.HeadW3:setVisible(false) -------------------------------- MODIFY HERE TO DECIDE WHICH MODEL PARTS GET TOGGLED DEPENDING ON THE CURRENT WEIGHT VARIANT/STAGE --------------------------------
+    models.model.BodyW0:setVisible(false)
+    models.model.BodyW1:setVisible(false)
+    models.model.BodyW2:setVisible(false)
+    models.model.BodyW3:setVisible(false)
+    models.model.BodyW4:setVisible(false)
+    models.model.TailW0:setVisible(false)
+    models.model.TailW1:setVisible(false)
+    models.model.TailW3:setVisible(false)
+    models.model.TailW4:setVisible(false)
+    models.model.LeftArmW0:setVisible(false)
+    models.model.LeftArmW2:setVisible(false)
+    models.model.LeftArmW3:setVisible(false)
+    models.model.LeftArmW4:setVisible(false)
+    models.model.RightArmW0:setVisible(false)
+    models.model.RightArmW2:setVisible(false)
+    models.model.RightArmW3:setVisible(false)
+    models.model.RightArmW4:setVisible(false)
+    models.model.LeftLegW0:setVisible(false)
+    models.model.LeftLegW1:setVisible(false)
+    models.model.LeftLegW2:setVisible(false)
+    models.model.LeftLegW3:setVisible(false)
+    models.model.LeftLegW4:setVisible(false)
+    models.model.RightLegW0:setVisible(false)
+    models.model.RightLegW1:setVisible(false)
+    models.model.RightLegW2:setVisible(false)
+    models.model.RightLegW3:setVisible(false)
+    models.model.RightLegW4:setVisible(false)
+
+    -- Toggle depending on stage/variant
+    if (variant == 0) then
+        models.model.BodyW0:setVisible(true)
+        models.model.TailW0:setVisible(true)
+        models.model.LeftArmW0:setVisible(true)
+        models.model.RightArmW0:setVisible(true)
+        models.model.LeftLegW0:setVisible(true)
+        models.model.RightLegW0:setVisible(true)
+    elseif (variant == 1) then
+        models.model.BodyW1:setVisible(true)
+        models.model.TailW1:setVisible(true)
+        models.model.LeftArmW0:setVisible(true)
+        models.model.RightArmW0:setVisible(true)
+        models.model.LeftLegW1:setVisible(true)
+        models.model.RightLegW1:setVisible(true)
+    elseif (variant == 2) then
+        models.model.BodyW2:setVisible(true)
+        models.model.TailW1:setVisible(true)
+        models.model.LeftArmW2:setVisible(true)
+        models.model.RightArmW2:setVisible(true)
+        models.model.LeftLegW2:setVisible(true)
+        models.model.RightLegW2:setVisible(true)
+    elseif (variant == 3) then
+        models.model.HeadW3:setVisible(true)
+        models.model.BodyW3:setVisible(true)
+        models.model.TailW3:setVisible(true)
+        models.model.LeftArmW3:setVisible(true)
+        models.model.RightArmW3:setVisible(true)
+        models.model.LeftLegW3:setVisible(true)
+        models.model.RightLegW3:setVisible(true)
+    elseif (variant == 4) then
+        models.model.HeadW3:setVisible(true)
+        models.model.BodyW4:setVisible(true)
+        models.model.TailW4:setVisible(true)
+        models.model.LeftArmW4:setVisible(true)
+        models.model.RightArmW4:setVisible(true)
+        models.model.LeftLegW4:setVisible(true)
+        models.model.RightLegW4:setVisible(true)
+    end
+end
+
+function shakeCamera(duration, intensity)
+    if (macro) then
+        cameraShakeDuration = duration * 6
+        cameraShakeMaxDuration = duration * 6
+        cameraShakeIntensity = intensity * 8
+    else
+        cameraShakeDuration = duration
+        cameraShakeMaxDuration = duration
+        cameraShakeIntensity = intensity
+    end
+
+    -- Store so receivers can have their screen shaken
+    avatar:store("cameraShakeDuration", cameraShakeDuration)
+    avatar:store("cameraShakeMaxDuration", cameraShakeMaxDuration)
+    avatar:store("cameraShakeIntensity", cameraShakeIntensity)
+    cameraShakeUpdateTicker = cameraShakeUpdateTicker + 1
+    avatar:store("cameraShakeUpdateTicker", cameraShakeUpdateTicker)
+end
+
+-- Sound for stepping while extremely large
+function stepEffects()
+    sounds:playSound("block.stone.hit", player:getPos(), 0.5, 0.3 - math.random() * 0.1, false):setAttenuation(4 * attenuationModifier)
+    if (macro) then
+        sounds:playSound("entity.zombie.attack_wooden_door", player:getPos(), 0.1, 0.3, false):setAttenuation(6 * attenuationModifier)
+    end
+    
+    if (cameraShakeDuration <= 4 or cameraShakeIntensity <= 0.05) then
+        shakeCamera(16, 0.05)
+    end
+end
+
+-- Sound for landing after a jump while extremely large
+function jumpEffects()
+    sounds:playSound("entity.generic.small_fall", player:getPos(), 0.4, 0.15, false):setAttenuation(4 * attenuationModifier)
+    if (weight >= 0.9) then
+        sounds:playSound("entity.zombie.attack_wooden_door", player:getPos(), 0.15, 0.4, false):setAttenuation(4 * attenuationModifier)
+    end
+    if (macro) then
+        sounds:playSound("entity.zombie.break_wooden_door", player:getPos(), 0.15, 0.15, false):setAttenuation(8 * attenuationModifier)
+    end
+
+    shakeCamera(16, weight * 0.3)
+end
+
+-- Ground slam for landing while extremely large
+function groundSlamEffects()
+    sounds:playSound("entity.generic.small_fall", player:getPos(), 1, 0.15, false):setAttenuation(6 * attenuationModifier)
+    if (weight >= 0.9) then
+        sounds:playSound("entity.zombie.break_wooden_door", player:getPos(), 0.5, 0.3, false):setAttenuation(8 * attenuationModifier)
+        sounds:playSound("entity.generic.explode", player:getPos(), 0.4, 0.35, false):setAttenuation(8 * attenuationModifier)
+    else
+        sounds:playSound("entity.zombie.break_wooden_door", player:getPos(), 0.25, 0.5, false):setAttenuation(6 * attenuationModifier)
+    end
+    if (macro) then
+        sounds:playSound("entity.zombie.break_wooden_door", player:getPos(), 0.25, 0.05, false):setAttenuation(8 * attenuationModifier)
+    end
+
+    -- Create ground particles
+    local pos
+    for i=0,255 do
+        pos = player:getPos()
+        pos = vec(pos.x + (math.random() - 0.5) * weight * 12, pos.y + 0.25, pos.z + (math.random() - 0.5) * weight * 12)
+        particles:newParticle("block{block_state:\"stone\"}", pos, vec(0, 1, 0))
+    end
+
+    shakeCamera(35 + weight * 40, weight * 0.6)
+end
+
+-- Splash effects for landing in water while extremely large
+function waterSlamEffects()
+    if (weight >= 0.9) then
+        sounds:playSound("entity.player.splash.high_speed", player:getPos(), 0.5, 0.4, false):setAttenuation(8 * attenuationModifier)
+        sounds:playSound("entity.generic.explode", player:getPos(), 0.4, 0.35, false):setAttenuation(8 * attenuationModifier)
+    else
+        sounds:playSound("entity.player.splash.high_speed", player:getPos(), 0.5, 0.75, false):setAttenuation(6 * attenuationModifier)
+    end
+
+    -- Create water particles
+    local pos
+    for i=0,127 do
+        pos = player:getPos()
+        pos = vec(pos.x + (math.random() - 0.5) * weight * 12, pos.y + 0.25, pos.z + (math.random() - 0.5) * weight * 12)
+        if (math.random(0, 1) <= 0) then
+            particles:newParticle("block{block_state:\"water\"}", pos, vec(0, 1, 0))
+        else
+            particles:newParticle("cloud", pos, vec(0, 0, 0))
+        end
+    end
+
+    shakeCamera(35 + weight * 40, weight * 0.6)
+end
+
+-- Plays sound effects where appropriate
+function updateSounds()
+    -- Gurgle sounds
+    if (weightVariant >= 3) then
+        gurgleSoundTimer = gurgleSoundTimer - 1
+        if (gurgleSoundTimer <= 0) then
+            gurgleSoundTimer = math.random(1100, 1300) - (weightVariant - 3) * 800
+            if (macro) then
+                gurgleSoundTimer = 160
+            end
+            playGurgleSound()
+        end
+    end
+
+    -- Slosh sounds
+    local minYaw = 48
+    if (macro) then
+        minYaw = 12
+    end
+    if (weightVariant >= 2) then
+        sloshSoundTimer = sloshSoundTimer - 1
+        if (sloshSoundTimer <= 0 and math.abs(player:getBodyYaw() - prevYaw) > minYaw) then
+            sloshSoundTimer = 6
+            playSloshSound()
+        end
+    end
+    prevYaw = player:getBodyYaw()
+
+    -- Hungry sounds (occur more frequently the bigger the weight)
+    if (prevFood <= (6 + weightVariant) and not (player:getGamemode() == "CREATIVE")) then
+        hungrySoundTimer = hungrySoundTimer - 1
+        if (hungrySoundTimer <= 0) then
+            hungrySoundTimer = math.random(150, 300)
+            playHungrySound()
+        end
+    else
+        hungrySoundTimer = 0
+    end
+end
+
+function playGurgleSound()
+    if (macro) then
+        sounds:playSound("gurgle_" .. math.random(0, 1), player:getPos(), 0.5, 0.5 - math.random() * 0.1, false):setAttenuation((4 + weightVariant) * attenuationModifier)
+
+        if (cameraShakeDuration <= 4 or cameraShakeIntensity <= 0.05) then
+            shakeCamera(320, 0.01)
+        end
+    else
+        sounds:playSound("gurgle_" .. math.random(0, 1), player:getPos(), 0.5, 1 - math.random() * 0.2, false):setAttenuation((4 + weightVariant) * attenuationModifier)
+
+        if (weight >= 0.9) then
+            shakeCamera(160, weight * 0.06)
+        end
+    end
+end
+
+function playSloshSound()
+    if (macro) then
+        sounds:playSound("entity.zombie.break_wooden_door", player:getPos(), 0.15, 0.05, false):setAttenuation(8 * attenuationModifier)
+    end
+    sounds:playSound("slosh_" .. math.random(0, 1), player:getPos(), (0.1 + weight * 0.4), (1.0 - weight * 0.5) - math.random() * 0.15, false):setAttenuation((4 + weightVariant) * attenuationModifier)
+
+    if (weight >= 0.9) then
+        shakeCamera(80, weight * 0.1)
+    end
+end
+
+function playHungrySound()
+    sounds:playSound("hungry_" .. math.random(0, 0), player:getPos(), 0.65, 1 - math.random() * 0.25, false)
+end
+
+function playBurpSound()
+    if (macro) then
+        sounds:playSound("burp_" .. math.random(0, 1), player:getPos(), 0.9, 0.5 - math.random() * 0.15, false):setAttenuation(8 * attenuationModifier)
+    else
+        sounds:playSound("burp_" .. math.random(0, 1), player:getPos(), 0.7, (1 - weight * 0.25) - math.random() * 0.15, false):setAttenuation((6 + weightVariant * 2) * attenuationModifier)
+    end
+
+    if (weight >= 0.9) then
+        shakeCamera(160, weight * 0.1)
+    end
+end
+
+function pings.burp()
+    playBurpSound()
+end
+
+function receiverUpdate()
+    -- First, iterate through every player in the world, stored in the variable v
+    for k, v in pairs(world:getPlayers()) do
+        -- Then, check to ensure the user is not receiving their own camera shake. This is only really necessary if this function is in the WG script
+        if (not (v:getUUID() == avatar:getUUID())) then
+            -- Get camera shake information from the avatar's stored variables
+            local shakeDuration = v:getVariable("cameraShakeDuration")
+            local shakeMaxDuration = v:getVariable("cameraShakeMaxDuration")
+            local shakeIntensity = v:getVariable("cameraShakeIntensity")
+
+            --[[
+            The shake intensity or shake duration is not updated every frame. Therefore,
+            a separate variable is needed to detect when a change to the camera shake state has occured.
+            This value is compared with the value stored in the cameraShakeReceiverTable using the player's UUID.
+            If the values don't match, that means a new camera shake occured.
+            Then, after that is checked, it updates the table to contain the new value
+            --]]
+            local shakeUpdateTicker = v:getVariable("cameraShakeUpdateTicker")
+
+            -- Make sure that the camera shake information was actually found. If not, the user is not wearing a WG avatar
+            if (not (shakeDuration == nil or shakeMaxDuration == nil or shakeIntensity == nil or shakeUpdateTicker == nil)) then
+                -- If the viewer is too far away, don't shake
+                if ((player:getPos() - v:getPos()):length() <= shakeIntensity * 1200) then
+                    -- If there has been an update (meaning a new screen shake was sent)
+                    if (not (cameraShakeReceiverTable[v:getUUID()] == nil or shakeUpdateTicker == cameraShakeReceiverTable[v:getUUID()])) then
+                        cameraShakeDuration = shakeDuration
+                        cameraShakeMaxDuration = shakeMaxDuration
+                        cameraShakeIntensity = shakeIntensity
+                    end
+                end
+
+                cameraShakeReceiverTable[v:getUUID()] = shakeUpdateTicker
+            end
+        end
+    end
+end
