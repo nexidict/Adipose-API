@@ -5,6 +5,7 @@
 --(X)Anim indexing for GranularWG
 --( )Weight gain and loss from food .w.
 
+--( )New Stage metatables
 --( )Head offset adjustment
 --( )Hitbox adjustment
 
@@ -15,6 +16,10 @@ local currentWeight = minWeight --how much you weigh currently
 
 local absWeight = 0 
 
+local timer = 0 --timer for sync
+local digestTimer = 0 --how often the model adds weight, affects weight gain and loss rate
+
+
 local weightAnims = {} -- each granular anim related to each weight stage
 local granularWeight = 0 -- how close are you to the next weight stage?
 
@@ -22,6 +27,10 @@ local weightStages = {} -- list of lists of model parts associated with each sta
 local weightStage = 1 --what stage you are at (default 1)
 
 local headPos = {} -- the desired head position for each weight stage
+
+local weightRate = 0.001 --affects the speed of weight gain and loss
+
+
 
 local function updateWeightStage() --Update current weight stage
   
@@ -57,32 +66,45 @@ end
 
 local function updateHitbox() 
 
-
   --check if pehkui is installed
   --check if player has operator
   --check if pehcompi is installed
   
   --deal with this shit later
 
+end
 
-  --i genuinely dont know what this does rn, probably useless
-  --relativeweight = math.floor(#weightStages * (mass-minMass/maxMass-minMass) + .5)
-  --weight = relativeweight
+local function foodCheck()
 
-  --pehcompi.changeScale(hitbox[weight])  --this changes the hitbox, dont worry about it
+	if player:getSaturation() > 2 then 
+		currentWeight = currentWeight + (player:getSaturation() - 2)*weightRate*digestTimer
+	end
+	
+	if player:getFood() < 17 then
+		currentWeight = currentWeight - (17 - player:getFood())*weightRate*digestTimer
+	end
+	
 end
 
 local function calculateProgress() -- determine progress value
   currentWeight = math.clamp(currentWeight, minWeight,  maxWeight)
+  absWeight = (currentWeight-minWeight)/(maxWeight-minWeight) -- on a scale of 0 to 1, how fat are you?
   
-  local absWeight = (currentWeight-minWeight)/(maxWeight-minWeight) -- on a scale of 0 to 1, how fat are you?
   local progress = (absWeight * (#weightStages-1)) + 1 --"weightStage + granularWeight"
   
   weightStage = math.floor(progress)
   granularWeight = progress - weightStage
-  
-  updateWeightStage()
-  updateGranularWG()
+
+end
+
+local function updateAll()
+	if not player:isLoaded() then return end
+	pings.syncWeight()
+	calculateProgress()
+	updateWeightStage()
+	updateGranularWG()
+	--updateHitbox()
+	--updateHeadOffset()
 end
 
 function NewWeightStage(parts,granularAnim,headOffset,hitboxWidth,hitBoxHeight) --makes a new weight stage
@@ -112,21 +134,48 @@ end
 
 function NudgeWeightStage(input) --shifts weight by an amount
   weightStage = weightStage + input
-  calculateProgress()
+  updateAll()
 end
 
 function NudgeWeight(input) --shifts weight by an amount
   currentWeight = currentWeight + input * 10
-  calculateProgress() --Marked for change
+  updateAll()
 end
+
+local function syncWeight ()
+	currentWeight = currentWeight
+	print(currentWeight)
+end
+
+pings.syncWeight = syncWeight
+
+
+
 
 function events.tick()
   --Weight Stage
   --updateWeightStage() --Do i need this?
+  
+	if timer < 0 then
+
+	updateAll()
+	
+	timer = 10
+	else
+	timer = timer - 1
+	end
+	
+	if digestTimer < 0 then
+	digestTimer = 10
+	foodCheck()
+	else
+	digestTimer = digestTimer - 1
+	end
+	
 end
 
 function events.entity_init()
-	updateWeightStage()
+	updateAll()
 end
 --DEBUG
 
