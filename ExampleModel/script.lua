@@ -25,6 +25,8 @@ local weightTrigger = mainPage:newAction()
 :item("minecraft:cake")
 :onScroll(function(dir) NudgeWeight(dir) end)
 
+
+
 local stage0 = {
 	models.model.BodyW0,
 	models.model.TailW0,
