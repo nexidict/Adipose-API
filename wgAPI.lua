@@ -37,7 +37,7 @@ local function updateWeightStage() --Update current weight stage
   weightStage = math.clamp(weightStage,1,#weightStages) --clamp weight to valid values
 
   for stage in ipairs(weightStages) do --iterate through weightStages and every "size" in weightStages to ensure only the modelparts in the index equal to the current weightStage are visible
-    local size = weightStages[stage]
+    --local size = weightStages[stage]
 
     for part in ipairs(weightStages[stage]) do
       size[part]:setVisible(weightStage == stage)

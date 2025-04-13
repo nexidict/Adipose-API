@@ -1,4 +1,4 @@
-local wgAPI = require("wgAPI")
+local adipose = require('Adipose')
 
 --hide vanilla model
 vanilla_model.PLAYER:setVisible(false)
@@ -34,13 +34,14 @@ local stage0 = {
 	models.model.RightArmW0,
 	models.model.LeftLegW0,
 	models.model.RightLegW0
-	}
-NewWeightStage(
+}
+adipose.weightStage:new(
 	stage0, --modelParts
 	animations.model.W0, --Granular anim
 	nil, --Head offset
 	nil, --Hitbox Width
-	nil --Hitbox Height
+	nil, --Hitbox Height
+	nil
 )
 
 stage1 = {
@@ -51,12 +52,13 @@ stage1 = {
 	models.model.LeftLegW1,
 	models.model.RightLegW1
 	}
-NewWeightStage(
+adipose.weightStage:new(
 	stage1, --modelParts
 	animations.model.W1, --Granular anim
 	nil, --Head offset
 	nil, --Hitbox Width
-	nil --Hitbox Height
+	nil, --Hitbox Height
+	nil
 )
 
 stage2 = {
@@ -67,12 +69,13 @@ stage2 = {
 	models.model.LeftLegW2,
 	models.model.RightLegW2
 	}
-NewWeightStage(
+adipose.weightStage:new(
 	stage2, --modelParts
 	animations.model.W2, --Granular anim
 	nil, --Head offset
 	nil, --Hitbox Width
-	nil --Hitbox Height
+	nil, --Hitbox Height
+	nil
 )
 
 stage3 = {
@@ -84,12 +87,13 @@ stage3 = {
 	models.model.LeftLegW3,
 	models.model.RightLegW3
 	}
-NewWeightStage(
+adipose.weightStage:new(
 	stage3, --modelParts
 	animations.model.W3, --Granular anim
 	nil, --Head offset
 	nil, --Hitbox Width
-	nil --Hitbox Height
+	nil, --Hitbox Height
+	nil
 )
 
 stage4 = {
@@ -101,10 +105,11 @@ stage4 = {
 	models.model.LeftLegW4,
 	models.model.RightLegW4
 	}
-NewWeightStage(
+adipose.weightStage:new(
 	stage4, --modelParts
 	nil, --Granular anim
 	nil, --Head offset
 	nil, --Hitbox Width
-	nil --Hitbox Height
+	nil, --Hitbox Height
+	nil
 )
