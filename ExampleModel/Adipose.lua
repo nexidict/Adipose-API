@@ -6,6 +6,18 @@ adipose.hitbox = true
 adipose.motion = true
 local previousHitboxValue = adipose.hitbox
 
+-- VARIABLES
+local maxWeight = 1000 -- The highest weight you can be
+local minWeight = 100 -- The lowest weight you can be
+local currentWeight = minWeight --how much you weigh currently
+
+local syncTimerReset = 10
+local syncTimer = 0
+
+
+local weightStage = 1 --what stage you are at (default 1)
+
+
 -- WEIGHT STAGE
 ---@class Adipose.WeightStage[]
 adipose.weightStages = {}
@@ -27,9 +39,25 @@ function adipose.weightStage:newStage()
     return self
 end
 
-function adipose.weightStage:tick()
+local function updateWeightStage()
+    --get current weight stage
+    --clamp to bounds
+    --is the value actually different?
+    if local oldWeightStage ~= weightStage then
+        
+        --change visual 
 
-end
+        oldWeightStage = weightStage
+    end
+
+
+function adipose.weightStage:tick()
+    if not player:isLoaded() then return end --ensure model is loaded
+
+    updateWeightStage()
+
+
+end 
 
 -- WEIGHT STAGE METHODS
 ---@param parts table<Models|ModelPart>
@@ -87,6 +115,34 @@ function adipose.weightStage:setMotion(motion)
     return self
 end
 
+-- WEIGHT DRIVER
+
+local function updateALL()
+    if not player:isLoaded() then return end
+	pings.syncWeight(currentWeight)
+	calculateProgress() --update underlying variables
+	--for _, w in ipairs(adipose.weightStages) do w:tick() end -- update the visiblity of all modelparts within weightstages
+	--updateGranularWG() --
+	--updateHitbox()
+	--updateHeadOffset()
+end
+
+local function calculateProgress() -- determine progress value
+    currentWeight = math.clamp(currentWeight, minWeight,  maxWeight)
+    local absWeight = (currentWeight-minWeight)/(maxWeight-minWeight) -- on a scale of 0 to 1, how fat are you?
+  
+    local progress = (absWeight * (#weightStages-1)) + 1 --"weightStage + granularWeight"
+  
+    weightStage = math.floor(progress)
+    --granularWeight = progress - weightStage
+end
+
+local function syncWeight (val) -- synchronize currentWeight
+	currentWeight = val
+	--print(currentWeight)
+end
+pings.syncWeight = syncWeight
+
 -- PEHKUI METHODS
 
 
@@ -111,10 +167,23 @@ function adipose.setMotionState(state)
     adipose.motion = state
 end
 
-function events.tick()
+-- EVENTS
+function events.entity_init()
+    
+    --pull weight from a config
+end
 
-    --sync
-    for _, w in ipairs(adipose.weightStages) do w:tick() end
+function events.tick()
+    
+    -- sync
+    if syncTimer < 0 then
+        updateALL() 
+        syncTimer = syncTimerReset
+    else
+        syncTimer = syncTimer - 1
+    end
+    
+      
 end
 
 
