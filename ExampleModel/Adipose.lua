@@ -4,22 +4,23 @@ local adipose = {}
 -- FLAGS
 adipose.hitbox = true
 adipose.motion = true
-local previousHitboxValue = adipose.hitbox
+adipose.eyeHeight = true
 
 -- WEIGHT STAGE
 ---@class Adipose.WeightStage[]
 adipose.weightStages = {}
 adipose.weightStage = {}
 adipose.weightStage.__index = adipose.weightStage
+adipose.currentWeightStage = 1
 
 ---@return table
 function adipose.weightStage:newStage()
     local self = setmetatable({
         partsList = {},
         granularAnim = '',
-        headOffset = 1,
         hitboxWidth = 1,
         hitboxHeight = 1,
+        eyeHeight = 1,
         motion = 1
     }, adipose.weightStage)
 
@@ -28,7 +29,6 @@ function adipose.weightStage:newStage()
 end
 
 function adipose.weightStage:tick()
-
 end
 
 -- WEIGHT STAGE METHODS
@@ -61,8 +61,8 @@ end
 
 ---@param offset number
 ---@return self
-function adipose.weightStage:setHeadOffset(offset)
-    self.headOffset = offset
+function adipose.weightStage:setEyeHeight(offset)
+    self.eyeHeight = offset
     return self
 end
 
@@ -88,7 +88,25 @@ function adipose.weightStage:setMotion(motion)
 end
 
 -- PEHKUI METHODS
+function adipose.setHitboxWidth(width)
+    print('Width', width)
+    host:sendChatCommand('scale set pehkui:hitbox_width '..width..' @s')
+end
 
+function adipose.setHitboxHeight(height)
+    print('Height', height)
+    host:sendChatCommand('scale set pehkui:hitbox_height '..height..' @s')
+end
+
+function adipose.setMotion(motion)
+    print('Motion', motion)
+    host:sendChatCommand('scale set pehkui:motion '..motion..' @s')
+end
+
+function adipose.setEyeHeight(offset)
+    print('Eye height', offset)
+    host:sendChatCommand('scale set pehkui:eye_height '..offset..' @s')
+end
 
 -- FLAGS METHODS
 ---@return boolean
@@ -101,14 +119,62 @@ function adipose.getMotionState()
     return adipose.motion
 end
 
+---@return boolean
+function adipose.getEyeHeightState()
+    return adipose.eyeHeight
+end
+
 ---@param state boolean
 function adipose.setHitboxState(state)
-    adipose.hitbox = state
+    local previousValue = adipose.hitbox
+
+    if state ~= previousValue then
+        adipose.hitbox = state
+
+        if state == true then
+            adipose.setHitboxWidth(adipose.weightStages[adipose.currentWeightStage].hitboxWidth)
+            adipose.setHitboxHeight(adipose.weightStages[adipose.currentWeightStage].hitboxHeight)
+            return
+        end
+
+        adipose.setHitboxWidth(1)
+        adipose.setHitboxHeight(1)
+        return
+    end
 end
 
 ---@param state boolean
 function adipose.setMotionState(state)
-    adipose.motion = state
+    local previousValue = adipose.motion
+
+    if state ~= previousValue then
+        adipose.motion = state
+
+        if state == true then
+            adipose.setMotion(adipose.weightStages[adipose.currentWeightStage].motion)
+            return
+        end
+
+        adipose.setMotion(1)
+        return
+    end
+end
+
+---@param state boolean
+function adipose.setEyeHeightState(state)
+    local previousValue = adipose.eyeHeight
+
+    if state ~= previousValue then
+        adipose.eyeHeight = state
+
+        if state == true then
+            adipose.setEyeHeight(adipose.weightStages[adipose.currentWeightStage].eyeHeight)
+            return
+        end
+
+        adipose.setEyeHeight(1)
+        return
+    end
 end
 
 function events.tick()
@@ -117,7 +183,18 @@ function events.tick()
     for _, w in ipairs(adipose.weightStages) do w:tick() end
 end
 
+function events.entity_init()
+    repeat
+        if #adipose.weightStages ~= 0 then
+            adipose.setHitboxWidth(adipose.weightStages[1].hitboxWidth)
+            adipose.setHitboxHeight(adipose.weightStages[1].hitboxHeight)
+            adipose.setMotion(adipose.weightStages[1].motion)
+            adipose.setEyeHeight(adipose.weightStages[1].eyeHeight)
+        end
 
+        return
+    until (#adipose.weightStages == 0)
+end
 
 
 return adipose
