@@ -1,17 +1,170 @@
 ---@class Adipose
 local adipose = {}
 
+-- CONSTANTS
+adipose.minWeight = 100
+adipose.maxWeight = 1000
+
+adipose.weightRate = 0.001
+
+-- VARIABLES
+adipose.currentWeight = adipose.minWeight
+adipose.granularWeight = 0
+adipose.currentWeightStage = 1
+
+adipose.syncTimer = 0
+adipose.digestTimer = 0
+
 -- FLAGS
 adipose.hitbox = true
 adipose.motion = true
 adipose.eyeHeight = true
+
+-- FUNCTIONS
+function pings.SyncWeight()
+
+end
+
+local function checkFood()
+    local curWeight = adipose.currentWeight
+
+    if player:getSaturation() > 2 then
+        curWeight =
+            curWeight + (player:getSaturation() - 2) * adipose.weightRate * adipose.digestTimer
+    end
+
+    if player:getFood() < 17 then
+		curWeight = 
+            adipose.currentWeight - (17 - player:getFood()) * adipose.weightRate * adipose.digestTimer
+	end
+
+    return curWeight
+end
+
+--- Given the number of stages, calculates and assigns thresholds to each weight stage.
+local function assignWeightStages()
+    local stageCount = #adipose.weightStages
+
+    for i, stage in ipairs(adipose.weightStages) do
+        local normalized = (i - 1) / (stageCount - 1)
+        stage.weight = adipose.minWeight + normalized * (adipose.maxWeight - adipose.minWeight)
+    end
+end
+
+local function calculateIndexFromWeight(weight)
+    local normalized = (weight - adipose.minWeight) / (adipose.maxWeight - adipose.minWeight)
+    local index = math.floor(normalized * (#adipose.weightStages - 1) + 1)
+    return math.clamp(index, 1, #adipose.weightStages)
+end
+
+--- Using thersholds, calculate the granular weight.
+local function calculateGranularity(weight, index)
+    local normalized = (weight - adipose.minWeight)/(adipose.maxWeight - adipose.minWeight)
+    local granularity = (normalized * (#adipose.weightStages - 1)) + 1
+    return granularity - index
+end
+
+-- MODEL FUNCTIONS
+local function setModelPartsVisibility(index)
+    local visibleParts = {}
+    for _, p in ipairs(adipose.weightStages[index].partsList) do
+        visibleParts[p] = true
+    end
+
+    for _, s in ipairs(adipose.weightStages) do
+        for _, p in ipairs(s.partsList) do
+            p:setVisible(visibleParts[p] == true)
+        end
+    end
+end
+
+local function setGranularity(granularity, index)
+    local animation = adipose.weightStages[index].granularAnim
+    if animation == '' then return end
+
+    animation:play()
+    animation:setSpeed(0)
+
+    local offset = animation:getLength() * granularity
+    animation:setOffset(offset)
+end
+
+-- EVENTS
+function events.tick()
+    local timer = adipose.syncTimer
+
+    if timer < 0 then 
+        -- syncWeight
+        timer = 10
+    else timer = timer - 1 end
+    
+    if timer < 0 then
+        timer = 10
+        adipose.SetWeight(checkFood())
+    else timer = timer - 1 end
+
+    adipose.syncTimer = timer
+end
+
+function events.entity_init()
+    if #adipose.weightStages == 0 then return end
+
+    adipose.setHitboxWidth(adipose.weightStages[1].hitboxWidth)
+    adipose.setHitboxHeight(adipose.weightStages[1].hitboxHeight)
+    adipose.setMotion(adipose.weightStages[1].motion)
+    adipose.setEyeHeight(adipose.weightStages[1].eyeHeight)
+
+    assignWeightStages()
+end
+
+-- WEIGHT MANAGEMENT
+function adipose.SetWeight(amount)
+    amount = math.clamp(amount, adipose.minWeight, adipose.maxWeight)
+    local index = calculateIndexFromWeight(amount)
+
+    adipose.currentWeight = amount
+    adipose.currentWeightStage = index
+
+    local granularity = calculateGranularity(amount, index)
+    adipose.granularWeight = granularity
+
+    local stage = adipose.weightStages[index]
+    adipose.setHitboxWidth(stage.hitboxWidth)
+    adipose.setHitboxHeight(stage.hitboxHeight)
+    adipose.setEyeHeight(stage.eyeHeight)
+    adipose.setMotion(stage.motion)
+
+    setModelPartsVisibility(index)
+    setGranularity(granularity, index)
+
+    print('Current Weight', adipose.currentWeight)
+    print('Current Weight Stage', adipose.currentWeightStage)
+    print('Granular Weight', adipose.granularWeight)
+end
+
+function adipose.setCurrentWeightStage(stage)
+    stage = math.clamp(math.floor(stage), 1, #adipose.weightStages)
+    adipose.SetWeight(adipose.weightStages[stage].weight)
+end
+
+function adipose.adjustWeightByAmount(amount)
+    amount = math.clamp(
+        (adipose.currentWeight + math.floor(amount)),
+        adipose.minWeight, adipose.maxWeight
+    )
+    adipose.SetWeight(amount)
+end
+
+function adipose.adjustWeightByStage(amount)
+    amount = math.clamp((adipose.currentWeightStage + math.floor(amount)), 1, #adipose.weightStages)
+    adipose.SetWeight(adipose.weightStages[amount].weight)
+end
 
 -- WEIGHT STAGE
 ---@class Adipose.WeightStage[]
 adipose.weightStages = {}
 adipose.weightStage = {}
 adipose.weightStage.__index = adipose.weightStage
-adipose.currentWeightStage = 1
 
 ---@return table
 function adipose.weightStage:newStage()
@@ -28,8 +181,6 @@ function adipose.weightStage:newStage()
     return self
 end
 
-function adipose.weightStage:tick()
-end
 
 -- WEIGHT STAGE METHODS
 ---@param parts table<Models|ModelPart>
@@ -89,41 +240,22 @@ end
 
 -- PEHKUI METHODS
 function adipose.setHitboxWidth(width)
-    print('Width', width)
     host:sendChatCommand('scale set pehkui:hitbox_width '..width..' @s')
 end
 
 function adipose.setHitboxHeight(height)
-    print('Height', height)
     host:sendChatCommand('scale set pehkui:hitbox_height '..height..' @s')
 end
 
 function adipose.setMotion(motion)
-    print('Motion', motion)
     host:sendChatCommand('scale set pehkui:motion '..motion..' @s')
 end
 
 function adipose.setEyeHeight(offset)
-    print('Eye height', offset)
     host:sendChatCommand('scale set pehkui:eye_height '..offset..' @s')
 end
 
 -- FLAGS METHODS
----@return boolean
-function adipose.getHitboxState()
-    return adipose.hitbox
-end
-
----@return boolean
-function adipose.getMotionState()
-    return adipose.motion
-end
-
----@return boolean
-function adipose.getEyeHeightState()
-    return adipose.eyeHeight
-end
-
 ---@param state boolean
 function adipose.setHitboxState(state)
     local previousValue = adipose.hitbox
@@ -176,25 +308,5 @@ function adipose.setEyeHeightState(state)
         return
     end
 end
-
-function events.tick()
-
-    --sync
-    for _, w in ipairs(adipose.weightStages) do w:tick() end
-end
-
-function events.entity_init()
-    repeat
-        if #adipose.weightStages ~= 0 then
-            adipose.setHitboxWidth(adipose.weightStages[1].hitboxWidth)
-            adipose.setHitboxHeight(adipose.weightStages[1].hitboxHeight)
-            adipose.setMotion(adipose.weightStages[1].motion)
-            adipose.setEyeHeight(adipose.weightStages[1].eyeHeight)
-        end
-
-        return
-    until (#adipose.weightStages == 0)
-end
-
 
 return adipose

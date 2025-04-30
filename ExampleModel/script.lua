@@ -21,9 +21,17 @@ local mainPage = action_wheel:newPage()
 action_wheel:setPage(mainPage)
 
 local weightTrigger = mainPage:newAction()
-:title("Cycle Weight")
-:item("minecraft:cake")
---:onScroll(function(dir) NudgeWeight(dir) end)
+	:title("Cycle Weight")
+	:item("minecraft:cake")
+	:onScroll(function(dir) adipose.adjustWeightByAmount(dir * 50) end)
+
+function weightTrigger.leftClick()
+	adipose.adjustWeightByStage(1)
+end
+
+function weightTrigger.rightClick()
+	adipose.adjustWeightByStage(-1)
+end
 
 local stage0 = {
 	models.model.BodyW0,
