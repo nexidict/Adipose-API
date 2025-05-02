@@ -350,7 +350,4 @@ function adipose.setEyeHeightState(state)
 end
 
 
-
-adipose.setScale("pehkui:base", 2)
-
 return adipose
