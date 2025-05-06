@@ -1,14 +1,25 @@
 ---@class Adipose
 local adipose = {}
 
+-- CONFIG
+config:setName("Adipose.Config")
+
 -- CONSTANTS
 adipose.minWeight = 100
 adipose.maxWeight = 1000
 
-adipose.weightRate = 0.001
+adipose.weightRate = 0.01
+adipose.updateDelay = 10 --Ticks until next update is parsed
+
+adipose.pehkui = {
+    HITBOX_WIDTH =  'pehkui:hitbox_width',
+    HITBOX_HEIGHT = 'pehkui:hitbox_height',
+    MOTION =        'pehkui:motion',
+    EYE_HEIGHT =    'pehkui:eye_height',
+}
 
 -- VARIABLES
-adipose.currentWeight = adipose.minWeight
+adipose.currentWeight = config:load("adipose.currentWeight") or adipose.minWeight
 adipose.granularWeight = 0
 adipose.currentWeightStage = 1
 
@@ -21,9 +32,10 @@ adipose.motion = true
 adipose.eyeHeight = true
 
 -- FUNCTIONS
-function pings.SyncWeight()
-
+function SyncWeight(amount)
+	adipose.SetWeight(amount)
 end
+pings.SyncWeight = SyncWeight
 
 local function checkFood()
     local curWeight = adipose.currentWeight
@@ -41,27 +53,38 @@ local function checkFood()
     return curWeight
 end
 
---- Given the number of stages, calculates and assigns thresholds to each weight stage.
-local function assignWeightStages()
-    local stageCount = #adipose.weightStages
+local function calculateWeightFromIndex(index)
+    if #adipose.weightStages == 1 then return adipose.minWeight end
 
-    for i, stage in ipairs(adipose.weightStages) do
-        local normalized = (i - 1) / (stageCount - 1)
-        stage.weight = adipose.minWeight + normalized * (adipose.maxWeight - adipose.minWeight)
-    end
+    local normalized = (index - 1) / (#adipose.weightStages - 1)
+    local weight = adipose.minWeight + normalized * (adipose.maxWeight - adipose.minWeight)
+
+    print('')
+    print('calculateWeightFromIndex')
+    print('Index', index, 'Normalized', normalized, 'Weight', weight)
+
+    return weight
 end
 
-local function calculateIndexFromWeight(weight)
+local function calculateProgressFromWeight(weight)
     local normalized = (weight - adipose.minWeight) / (adipose.maxWeight - adipose.minWeight)
-    local index = math.floor(normalized * (#adipose.weightStages - 1) + 1)
-    return math.clamp(index, 1, #adipose.weightStages)
-end
 
---- Using thersholds, calculate the granular weight.
-local function calculateGranularity(weight, index)
-    local normalized = (weight - adipose.minWeight)/(adipose.maxWeight - adipose.minWeight)
-    local granularity = (normalized * (#adipose.weightStages - 1)) + 1
-    return granularity - index
+    if #adipose.weightStages == 1 then
+        return 1, normalized
+    end
+
+	local normalized = (weight - adipose.minWeight) / (adipose.maxWeight - adipose.minWeight)
+    local exactWeightStage = normalized * (#adipose.weightStages - 1) + 1
+
+    local index = math.floor(exactWeightStage)
+    local granularity = exactWeightStage - index
+	
+    print('')
+    print('calculateProgressFromWeight')
+    print('Normalized', normalized, 'Weight Stage', exactWeightStage)
+    print('Index', index, 'Granularity', granularity)
+
+	return index, granularity
 end
 
 -- MODEL FUNCTIONS
@@ -78,7 +101,7 @@ local function setModelPartsVisibility(index)
     end
 end
 
-local function setGranularity(granularity, index)
+local function setGranularity(index, granularity)
     local animation = adipose.weightStages[index].granularAnim
     if animation == '' then return end
 
@@ -94,70 +117,64 @@ function events.tick()
     local timer = adipose.syncTimer
 
     if timer < 0 then 
-        -- syncWeight
-        timer = 10
+        timer = adipose.updateDelay
+        
+		adipose.SetWeight(checkFood())
+		pings.SyncWeight(adipose.currentWeight)
+		
     else timer = timer - 1 end
     
-    if timer < 0 then
-        timer = 10
-        adipose.SetWeight(checkFood())
-    else timer = timer - 1 end
-
-    adipose.syncTimer = timer
+    adipose.syncTimer = timer 
 end
 
 function events.entity_init()
+    adipose.pehkuiCheck = client:isModLoaded("pehkui")
+	adipose.p4aCheck = client:isModLoaded("pehkui4all")
+	adipose.opCheck = player:getPermissionLevel() == 4
+
     if #adipose.weightStages == 0 then return end
 
-    adipose.setHitboxWidth(adipose.weightStages[1].hitboxWidth)
-    adipose.setHitboxHeight(adipose.weightStages[1].hitboxHeight)
-    adipose.setMotion(adipose.weightStages[1].motion)
-    adipose.setEyeHeight(adipose.weightStages[1].eyeHeight)
-
-    assignWeightStages()
+    adipose.setScale(adipose.pehkui.HITBOX_WIDTH, adipose.weightStages[1].hitboxWidth)
+    adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, adipose.weightStages[1].hitboxHeight)
+    adipose.setScale(adipose.pehkui.MOTION, adipose.weightStages[1].motion)
+    adipose.setScale(adipose.pehkui.EYE_HEIGHT, adipose.weightStages[1].eyeHeight)
 end
 
 -- WEIGHT MANAGEMENT
 function adipose.SetWeight(amount)
     amount = math.clamp(amount, adipose.minWeight, adipose.maxWeight)
-    local index = calculateIndexFromWeight(amount)
+    local index, granularity = calculateProgressFromWeight(amount)
 
     adipose.currentWeight = amount
     adipose.currentWeightStage = index
 
-    local granularity = calculateGranularity(amount, index)
     adipose.granularWeight = granularity
 
     local stage = adipose.weightStages[index]
-    adipose.setHitboxWidth(stage.hitboxWidth)
-    adipose.setHitboxHeight(stage.hitboxHeight)
-    adipose.setEyeHeight(stage.eyeHeight)
-    adipose.setMotion(stage.motion)
+    adipose.setScale(adipose.pehkui.HITBOX_WIDTH, stage.hitboxWidth)
+    adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, stage.hitboxHeight)
+    adipose.setScale(adipose.pehkui.MOTION, stage.motion)
+    adipose.setScale(adipose.pehkui.EYE_HEIGHT, stage.eyeHeight)
 
     setModelPartsVisibility(index)
-    setGranularity(granularity, index)
+    setGranularity(index, granularity)
 
-    print('Current Weight', adipose.currentWeight)
-    print('Current Weight Stage', adipose.currentWeightStage)
-    print('Granular Weight', adipose.granularWeight)
+    config:save("adipose.currentWeight", adipose.currentWeight)
 end
 
 function adipose.setCurrentWeightStage(stage)
     stage = math.clamp(math.floor(stage), 1, #adipose.weightStages)
-    adipose.SetWeight(adipose.weightStages[stage].weight)
+    adipose.SetWeight(calculateWeightFromIndex(stage))
 end
 
 function adipose.adjustWeightByAmount(amount)
-    amount = math.clamp(
-        (adipose.currentWeight + math.floor(amount)),
-        adipose.minWeight, adipose.maxWeight
-    )
+    amount = math.clamp((adipose.currentWeight + math.floor(amount)), adipose.minWeight, adipose.maxWeight)
     adipose.SetWeight(amount)
 end
 
 function adipose.adjustWeightByStage(amount)
     amount = math.clamp((adipose.currentWeightStage + math.floor(amount)), 1, #adipose.weightStages)
-    adipose.SetWeight(adipose.weightStages[amount].weight)
+    adipose.SetWeight(calculateWeightFromIndex(amount))
 end
 
 -- WEIGHT STAGE
@@ -239,20 +256,18 @@ function adipose.weightStage:setMotion(motion)
 end
 
 -- PEHKUI METHODS
-function adipose.setHitboxWidth(width)
-    host:sendChatCommand('scale set pehkui:hitbox_width '..width..' @s')
-end
+function adipose.setScale(scale, value)
+    if not player:isLoaded() or not adipose.pehkuiCheck then return end
 
-function adipose.setHitboxHeight(height)
-    host:sendChatCommand('scale set pehkui:hitbox_height '..height..' @s')
-end
-
-function adipose.setMotion(motion)
-    host:sendChatCommand('scale set pehkui:motion '..motion..' @s')
-end
-
-function adipose.setEyeHeight(offset)
-    host:sendChatCommand('scale set pehkui:eye_height '..offset..' @s')
+	if adipose.opCheck then 
+		host:sendChatCommand('scale set '..scale..' '..value..' @s')
+	elseif adipose.p4aCheck then 
+		local prefixIndex = string.find(scale, ":")
+		scale = string.sub(scale, prefixIndex+1,-1) --this command is ass, returns scale without a prefix because god's light doesnt shine here
+		host:sendChatCommand('lesserscale set '..scale..' '..scale)
+	else 
+		print("Insufficient permissions to use scaling")
+	end
 end
 
 -- FLAGS METHODS
@@ -264,13 +279,13 @@ function adipose.setHitboxState(state)
         adipose.hitbox = state
 
         if state == true then
-            adipose.setHitboxWidth(adipose.weightStages[adipose.currentWeightStage].hitboxWidth)
-            adipose.setHitboxHeight(adipose.weightStages[adipose.currentWeightStage].hitboxHeight)
+            adipose.setScale(adipose.pehkui.HITBOX_WIDTH, adipose.weightStages[adipose.currentWeightStage].hitboxWidth)
+            adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, adipose.weightStages[adipose.currentWeightStage].hitboxWidth)
             return
         end
 
-        adipose.setHitboxWidth(1)
-        adipose.setHitboxHeight(1)
+        adipose.setScale(adipose.pehkui.HITBOX_WIDTH, 1)
+        adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, 1)
         return
     end
 end
@@ -283,11 +298,11 @@ function adipose.setMotionState(state)
         adipose.motion = state
 
         if state == true then
-            adipose.setMotion(adipose.weightStages[adipose.currentWeightStage].motion)
+            adipose.setScale(adipose.pehkui.MOTION, adipose.weightStages[adipose.currentWeightStage].motion)
             return
         end
 
-        adipose.setMotion(1)
+        adipose.setScale(adipose.pehkui.MOTION, 1)
         return
     end
 end
@@ -300,11 +315,11 @@ function adipose.setEyeHeightState(state)
         adipose.eyeHeight = state
 
         if state == true then
-            adipose.setEyeHeight(adipose.weightStages[adipose.currentWeightStage].eyeHeight)
+            adipose.setScale(adipose.pehkui.EYE_HEIGHT, adipose.weightStages[adipose.currentWeightStage].eyeHeight)
             return
         end
 
-        adipose.setEyeHeight(1)
+        adipose.setScale(adipose.pehkui.EYE_HEIGHT, 1)
         return
     end
 end
