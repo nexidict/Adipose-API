@@ -26,6 +26,8 @@ adipose.currentWeightStage = 1
 adipose.syncTimer = 10
 adipose.digestTimer = 0
 
+adipose.scaling = true
+
 -- FLAGS
 adipose.hitbox = true
 adipose.motion = true
@@ -128,7 +130,8 @@ function events.entity_init()
 	--IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! \/
 	
 	--Scaling Startup Message
-	if adipose.pehkuiCheck then
+		
+	if adipose.pehkuiCheck and adipose.scaling then
 		if adipose.opCheck then
 			print("OP Detected, Using /scale for Scaling")
 		elseif adipose.p4aCheck then
@@ -139,6 +142,8 @@ function events.entity_init()
 	else
 		print("Pehkui not Installed, Scaling Disabled")
 	end
+	
+	if not adipose.scaling then print("Scaling Manually Disabled") end
 	
 	--IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! /\
 
@@ -267,8 +272,8 @@ end
 
 -- PEHKUI METHODS
 function adipose.setScale(scale, value)
-    if not player:isLoaded() or not adipose.pehkuiCheck then return end
-
+    if not player:isLoaded() or not adipose.pehkuiCheck and adipose.scaling then return end
+	
 	if adipose.opCheck then 
 		host:sendChatCommand('scale set '..scale..' '..value..' @s')
 	elseif adipose.p4aCheck then 
