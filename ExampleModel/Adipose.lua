@@ -12,10 +12,10 @@ adipose.weightRate = 0.01
 adipose.updateDelay = 10 --Ticks until next update is parsed
 
 adipose.pehkui = {
-    HITBOX_WIDTH = 'pehkui:hitbox_width',
+    HITBOX_WIDTH =  'pehkui:hitbox_width',
     HITBOX_HEIGHT = 'pehkui:hitbox_height',
-    MOTION = 'pehkui:motion',
-    EYE_HEIGHT = 'pehkui:eye_height',
+    MOTION =        'pehkui:motion',
+    EYE_HEIGHT =    'pehkui:eye_height',
 }
 
 -- VARIABLES
@@ -37,7 +37,6 @@ adipose.eyeHeight = true
 function SyncWeight(amount)
     adipose.SetWeight(amount)
 end
-
 pings.SyncWeight = SyncWeight
 
 local function checkFood()
@@ -113,40 +112,36 @@ function events.tick()
 
         adipose.SetWeight(checkFood())
         pings.SyncWeight(adipose.currentWeight)
-    else
-        timer = timer - 1
-    end
+    else timer = timer - 1 end
 
     adipose.syncTimer = timer
 end
 
 function events.entity_init()
     if #adipose.weightStages == 0 then return end
-
+	
     adipose.pehkuiCheck = client:isModLoaded("pehkui")
     adipose.p4aCheck = client:isModLoaded("pehkui4all")
-    adipose.opCheck = player:getPermissionLevel() == 4
+    adipose.opCheck = player:getPermissionLevel() == 4   
 
     --IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! \/
 
     --Scaling Startup Message
 
-    --[[
     if adipose.pehkuiCheck and adipose.scaling then
-        if adipose.opCheck then
-            print("OP Detected, Using /scale for Scaling")
-        elseif adipose.p4aCheck then
-            print("Pehkui 4 All Detected Using /lesserscale for Scaling")
-        else
-            print("Insufficient Permissions for Scaling, Scaling Disabled")
-        end
+      if adipose.opCheck then
+        print("OP Detected, Using /scale for Scaling")
+      elseif adipose.p4aCheck then
+        print("Pehkui 4 All Detected Using /lesserscale for Scaling")
+      else
+        print("Insufficient Permissions for Scaling, Scaling Disabled")
+      end	
     else
-        print("Pehkui not Installed, Scaling Disabled")
+      print("Pehkui not Installed, Scaling Disabled")
     end
 
     if not adipose.scaling then print("Scaling Manually Disabled") end
-    ]]---
-    
+
     --IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! /\
 
     adipose.setScale(adipose.pehkui.HITBOX_WIDTH, adipose.weightStages[1].hitboxWidth)
@@ -173,7 +168,7 @@ function adipose.SetWeight(amount)
 
     setModelPartsVisibility(index)
     setGranularity(index, granularity)
-
+  
     --print(index , granularity)
 
     config:save("adipose.currentWeight", adipose.currentWeight)
@@ -274,7 +269,7 @@ end
 -- PEHKUI METHODS
 function adipose.setScale(scale, value)
     if not player:isLoaded() or not adipose.pehkuiCheck and adipose.scaling then return end
-
+  
     if adipose.opCheck then
         host:sendChatCommand('scale set ' .. scale .. ' ' .. value .. ' @s')
     elseif adipose.p4aCheck then
@@ -324,7 +319,7 @@ end
 ---@param state boolean
 function adipose.setEyeHeightState(state)
     local previousValue = adipose.eyeHeight
-
+  
     if state ~= previousValue then
         adipose.eyeHeight = state
 
@@ -332,7 +327,7 @@ function adipose.setEyeHeightState(state)
             adipose.setScale(adipose.pehkui.EYE_HEIGHT, adipose.weightStages[adipose.currentWeightStage].eyeHeight)
             return
         end
-
+    
         adipose.setScale(adipose.pehkui.EYE_HEIGHT, 1)
         return
     end
