@@ -12,10 +12,10 @@ adipose.weightRate = 0.01
 adipose.updateDelay = 10 --Ticks until next update is parsed
 
 adipose.pehkui = {
-    HITBOX_WIDTH =  'pehkui:hitbox_width',
+    HITBOX_WIDTH = 'pehkui:hitbox_width',
     HITBOX_HEIGHT = 'pehkui:hitbox_height',
-    MOTION =        'pehkui:motion',
-    EYE_HEIGHT =    'pehkui:eye_height',
+    MOTION = 'pehkui:motion',
+    EYE_HEIGHT = 'pehkui:eye_height',
 }
 
 -- VARIABLES
@@ -23,8 +23,10 @@ adipose.currentWeight = config:load("adipose.currentWeight") or adipose.minWeigh
 adipose.granularWeight = 0
 adipose.currentWeightStage = 1
 
-adipose.syncTimer = 0
+adipose.syncTimer = 10
 adipose.digestTimer = 0
+
+adipose.scaling = true
 
 -- FLAGS
 adipose.hitbox = true
@@ -33,8 +35,9 @@ adipose.eyeHeight = true
 
 -- FUNCTIONS
 function SyncWeight(amount)
-	adipose.SetWeight(amount)
+    adipose.SetWeight(amount)
 end
+
 pings.SyncWeight = SyncWeight
 
 local function checkFood()
@@ -46,45 +49,34 @@ local function checkFood()
     end
 
     if player:getFood() < 17 then
-		curWeight = 
+        curWeight =
             adipose.currentWeight - (17 - player:getFood()) * adipose.weightRate * adipose.digestTimer
-	end
+    end
 
     return curWeight
 end
 
 local function calculateWeightFromIndex(index)
-    if #adipose.weightStages == 1 then return adipose.minWeight end
+    if index == #adipose.weightStages + 1 then return adipose.maxWeight end
 
-    local normalized = (index - 1) / (#adipose.weightStages - 1)
+    local normalized = (index - 1) / (#adipose.weightStages)
     local weight = adipose.minWeight + normalized * (adipose.maxWeight - adipose.minWeight)
-
-    print('')
-    print('calculateWeightFromIndex')
-    print('Index', index, 'Normalized', normalized, 'Weight', weight)
 
     return weight
 end
 
 local function calculateProgressFromWeight(weight)
     local normalized = (weight - adipose.minWeight) / (adipose.maxWeight - adipose.minWeight)
+    local exactWeightStage = math.ceil(normalized * #adipose.weightStages + 1)
 
-    if #adipose.weightStages == 1 then
-        return 1, normalized
+    if exactWeightStage == #adipose.weightStages + 1 then
+        return #adipose.weightStages, 1
     end
-
-	local normalized = (weight - adipose.minWeight) / (adipose.maxWeight - adipose.minWeight)
-    local exactWeightStage = normalized * (#adipose.weightStages - 1) + 1
 
     local index = math.floor(exactWeightStage)
     local granularity = exactWeightStage - index
-	
-    print('')
-    print('calculateProgressFromWeight')
-    print('Normalized', normalized, 'Weight Stage', exactWeightStage)
-    print('Index', index, 'Granularity', granularity)
 
-	return index, granularity
+    return index, granularity
 end
 
 -- MODEL FUNCTIONS
@@ -116,23 +108,46 @@ end
 function events.tick()
     local timer = adipose.syncTimer
 
-    if timer < 0 then 
+    if timer < 0 then
         timer = adipose.updateDelay
-        
-		adipose.SetWeight(checkFood())
-		pings.SyncWeight(adipose.currentWeight)
-		
-    else timer = timer - 1 end
-    
-    adipose.syncTimer = timer 
+
+        adipose.SetWeight(checkFood())
+        pings.SyncWeight(adipose.currentWeight)
+    else
+        timer = timer - 1
+    end
+
+    adipose.syncTimer = timer
 end
 
 function events.entity_init()
-    adipose.pehkuiCheck = client:isModLoaded("pehkui")
-	adipose.p4aCheck = client:isModLoaded("pehkui4all")
-	adipose.opCheck = player:getPermissionLevel() == 4
-
     if #adipose.weightStages == 0 then return end
+
+    adipose.pehkuiCheck = client:isModLoaded("pehkui")
+    adipose.p4aCheck = client:isModLoaded("pehkui4all")
+    adipose.opCheck = player:getPermissionLevel() == 4
+
+    --IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! \/
+
+    --Scaling Startup Message
+
+    --[[
+    if adipose.pehkuiCheck and adipose.scaling then
+        if adipose.opCheck then
+            print("OP Detected, Using /scale for Scaling")
+        elseif adipose.p4aCheck then
+            print("Pehkui 4 All Detected Using /lesserscale for Scaling")
+        else
+            print("Insufficient Permissions for Scaling, Scaling Disabled")
+        end
+    else
+        print("Pehkui not Installed, Scaling Disabled")
+    end
+
+    if not adipose.scaling then print("Scaling Manually Disabled") end
+    ]]---
+    
+    --IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! /\
 
     adipose.setScale(adipose.pehkui.HITBOX_WIDTH, adipose.weightStages[1].hitboxWidth)
     adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, adipose.weightStages[1].hitboxHeight)
@@ -159,11 +174,13 @@ function adipose.SetWeight(amount)
     setModelPartsVisibility(index)
     setGranularity(index, granularity)
 
+    --print(index , granularity)
+
     config:save("adipose.currentWeight", adipose.currentWeight)
 end
 
 function adipose.setCurrentWeightStage(stage)
-    stage = math.clamp(math.floor(stage), 1, #adipose.weightStages)
+    stage = math.clamp(math.floor(stage), 1, #adipose.weightStages + 1)
     adipose.SetWeight(calculateWeightFromIndex(stage))
 end
 
@@ -173,7 +190,7 @@ function adipose.adjustWeightByAmount(amount)
 end
 
 function adipose.adjustWeightByStage(amount)
-    amount = math.clamp((adipose.currentWeightStage + math.floor(amount)), 1, #adipose.weightStages)
+    amount = math.clamp((adipose.currentWeightStage + math.floor(amount)), 1, #adipose.weightStages + 1)
     adipose.SetWeight(calculateWeightFromIndex(amount))
 end
 
@@ -198,7 +215,6 @@ function adipose.weightStage:newStage()
     return self
 end
 
-
 -- WEIGHT STAGE METHODS
 ---@param parts table<Models|ModelPart>
 ---@return self
@@ -212,9 +228,9 @@ function adipose.weightStage:setParts(parts)
     -- Validate contents of the table
     for i, p in ipairs(parts) do
         if type(p) == 'ModelParts' or type(p) == 'models' then
-            error("The body part at position "..i.." is not a models or a ModelPart")
+            error("The body part at position " .. i .. " is not a models or a ModelPart")
         end
-    end 
+    end
 
     self.partsList = parts
     return self
@@ -257,17 +273,15 @@ end
 
 -- PEHKUI METHODS
 function adipose.setScale(scale, value)
-    if not player:isLoaded() or not adipose.pehkuiCheck then return end
+    if not player:isLoaded() or not adipose.pehkuiCheck and adipose.scaling then return end
 
-	if adipose.opCheck then 
-		host:sendChatCommand('scale set '..scale..' '..value..' @s')
-	elseif adipose.p4aCheck then 
-		local prefixIndex = string.find(scale, ":")
-		scale = string.sub(scale, prefixIndex+1,-1) --this command is ass, returns scale without a prefix because god's light doesnt shine here
-		host:sendChatCommand('lesserscale set '..scale..' '..scale)
-	else 
-		print("Insufficient permissions to use scaling")
-	end
+    if adipose.opCheck then
+        host:sendChatCommand('scale set ' .. scale .. ' ' .. value .. ' @s')
+    elseif adipose.p4aCheck then
+        local prefixIndex = string.find(scale, ":")
+        scale = string.sub(scale, prefixIndex + 1, -1) --this command is ass, returns scale without a prefix because god's light doesnt shine here
+        host:sendChatCommand('lesserscale set ' .. value .. ' ' .. scale)
+    end
 end
 
 -- FLAGS METHODS
