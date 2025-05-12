@@ -1,4 +1,6 @@
+
 local adipose = require('Adipose')
+
 
 --hide vanilla model
 vanilla_model.PLAYER:setVisible(false)
@@ -12,8 +14,6 @@ vanilla_model.CAPE:setVisible(false)
 --hide vanilla elytra model
 vanilla_model.ELYTRA:setVisible(false)
 
---headPositions = {26.325, 35}--NOT IMPORTANT PLEASE FUCKING REMOVE I SWEAR TO CHRIST
-
 -- SCRIPT ACTIONS
 
 -- Action Wheel
@@ -23,7 +23,7 @@ action_wheel:setPage(mainPage)
 local weightTrigger = mainPage:newAction()
 	:title("Cycle Weight")
 	:item("minecraft:cake")
-	:onScroll(function(dir) adipose.adjustWeightByAmount(dir * 50) end)
+	:onScroll(function(dir) adipose.adjustWeightByAmount(dir * 25) end)
 
 function weightTrigger.leftClick()
 	adipose.adjustWeightByStage(1)
@@ -56,6 +56,7 @@ local stage1 = {
 adipose.weightStage:newStage()
 	:setParts(stage1)
 	:setGranularAnimation(animations.model.W1)
+	:setHitboxWidth(1.5)
 
 local stage2 = {
 	models.model.BodyW2,
@@ -68,6 +69,7 @@ local stage2 = {
 adipose.weightStage:newStage()
 	:setParts(stage2)
 	:setGranularAnimation(animations.model.W2)
+	:setHitboxWidth(2)
 
 local stage3 = {
 	models.model.HeadW3,
@@ -81,6 +83,7 @@ local stage3 = {
 adipose.weightStage:newStage()
 	:setParts(stage3)
 	:setGranularAnimation(animations.model.W3)
+	:setHitboxWidth(3)
 
 local stage4 = {
 	models.model.HeadW3,
@@ -93,3 +96,5 @@ local stage4 = {
 }
 adipose.weightStage:newStage()
 	:setParts(stage4)
+	:setGranularAnimation(animations.model.W4)
+	:setHitboxWidth(4)
