@@ -1,4 +1,3 @@
-
 local adipose = require('Adipose')
 
 
@@ -20,18 +19,24 @@ vanilla_model.ELYTRA:setVisible(false)
 local mainPage = action_wheel:newPage()
 action_wheel:setPage(mainPage)
 
+
+local NBTCheck = mainPage:newAction()
+	:title("Print NBT")
+	:item("minecraft:cod")
+	:onLeftClick(function() printPlayerNBT() end )	
+
 local weightTrigger = mainPage:newAction()
 	:title("Cycle Weight")
 	:item("minecraft:cake")
 	:onScroll(function(dir) adipose.adjustWeightByAmount(dir * 25) end)
+	:onLeftClick(function() adipose.adjustWeightByStage(1) end )	
+	:onRightClick(function() adipose.adjustWeightByStage(-1) end )	
 
-function weightTrigger.leftClick()
-	adipose.adjustWeightByStage(1)
+
+function printPlayerNBT()
+	printTable(player:getNbt()["ForgeCaps"]["overstuffed:weightbar"])
 end
 
-function weightTrigger.rightClick()
-	adipose.adjustWeightByStage(-1)
-end
 
 local stage0 = {
 	models.model.BodyW0,
