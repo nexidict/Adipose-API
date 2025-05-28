@@ -9,7 +9,6 @@ adipose.minWeight = 100
 adipose.maxWeight = 1000
 
 adipose.weightRate = 0.01
-adipose.updateDelay = 10 --Ticks until next update is parsed
 
 adipose.pehkui = {
     HITBOX_WIDTH =  'pehkui:hitbox_width',
@@ -23,8 +22,9 @@ adipose.currentWeight = config:load("adipose.currentWeight") or adipose.minWeigh
 adipose.granularWeight = 0
 adipose.currentWeightStage = 1
 
-adipose.syncTimer = 10
-adipose.digestTimer = 0
+adipose.syncTimer = 20
+local timer = adipose.syncTimer
+
 
 adipose.scaling = true
 
@@ -40,28 +40,27 @@ end
 pings.SyncWeight = SyncWeight
 
 local function checkFood()
-    local curWeight = adipose.currentWeight
-	
-	if adipose.osCheck then return curWeight end --dont run if os is installed
-	
+	--only runs if OS isnt installed
+    local deltaWeight = 0
+
     if player:getSaturation() > 2 then
-        curWeight =
-            curWeight + (player:getSaturation() - 2) * adipose.digestTimer
+        deltaWeight =
+            deltaWeight + (player:getSaturation() - 2) * adipose.weightRate	
     end
 
     if player:getFood() < 17 then
-		curWeight = 
-            curWeight - (17 - player:getFood()) * adipose.digestTimer
+		deltaWeight = 
+            deltaWeight - (17 - player:getFood()) * adipose.weightRate
 	end
 
-    return curWeight
+    return deltaWeight
 end
 
 local function calculateWeightFromIndex(index)
     if index == #adipose.weightStages+1 then return adipose.maxWeight end
 
     local normalized = (index - 1) / (#adipose.weightStages)
-    local weight = adipose.minWeight + normalized * (adipose.maxWeight - adipose.minWeight)
+    local weight = adipose.minWeight + normalized * (adipose.maxWeight - adipose.minWeight) 
 
     return weight
 end
@@ -109,17 +108,24 @@ end
 
 -- EVENTS
 function events.tick()
-    local timer = adipose.syncTimer
-
     if timer < 0 then 
-        timer = adipose.updateDelay
+        timer = adipose.syncTimer
         
-		adipose.SetWeight(checkFood())
-		pings.SyncWeight(adipose.currentWeight)
+		if not adipose.osCheck then --Update the weight value
+			local deltaWeight = checkFood() --All things that affect weight 
+			adipose.currentWeight = adipose.currentWeight + deltaWeight 
+		else
+			adipose.currentWeight = player:getNbt()["ForgeCaps"]["overstuffed:weightbar"]["currentweight"] --ignore everything and just sync with overstuffed 
+		end
 		
-    else timer = timer - 1 end
-    
-    adipose.syncTimer = timer 
+		
+		local packet = math.floor(adipose.currentWeight*10)/10
+		--print(packet)
+		pings.SyncWeight(packet) -- Set model to show new weight
+		
+    else 
+		timer = timer - 1
+	end
 end
 
 function events.entity_init()
@@ -133,9 +139,10 @@ function events.entity_init()
 		adipose.maxWeight = OSWeightBar["maxweight"]
 		adipose.minWeight = OSWeightBar["minweight"]
 		adipose.currentWeight = OSWeightBar["currentweight"]
-		print(adipose.maxWeight)
-		print(adipose.minWeight)
-		print(adipose.currentWeight)
+		
+		--print(adipose.maxWeight)
+		--print(adipose.minWeight)
+		--print(adipose.currentWeight)
 	end
 	
 	adipose.pehkuiCheck = client:isModLoaded("pehkui")
@@ -173,9 +180,7 @@ end
 function adipose.SetWeight(amount)
 	
     amount = math.clamp(amount, adipose.minWeight, adipose.maxWeight)
-	
-	if adipose.osCheck then amount = player:getNbt()["ForgeCaps"]["overstuffed:weightbar"]["currentweight"] end --ignore everything and just sync with overstuffed
-	
+		
     local index, granularity = calculateProgressFromWeight(amount)
 
     adipose.currentWeight = amount
@@ -194,7 +199,7 @@ function adipose.SetWeight(amount)
 	
 	--print(index , granularity)
 
-    if not adipose.osCheck then config:save("adipose.currentWeight", adipose.currentWeight)end
+    if not adipose.osCheck then config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)end
 end
 
 function adipose.setCurrentWeightStage(stage)
@@ -209,7 +214,7 @@ end
 
 function adipose.adjustWeightByStage(amount)
     amount = math.clamp((adipose.currentWeightStage + math.floor(amount)), 1, #adipose.weightStages+1)
-    adipose.SetWeight(calculateWeightFromIndex(amount))
+    adipose.SetWeight(calculateWeightFromIndex(amount) + 1)-- +1 is padding for hunger decay
 end
 
 -- WEIGHT STAGE
@@ -293,6 +298,7 @@ end
 -- PEHKUI METHODS
 function adipose.setScale(scale, value)
     if not player:isLoaded() or not adipose.pehkuiCheck or not adipose.scaling then return end
+	
 	
 	if adipose.opCheck then 
 		host:sendChatCommand('scale set '..scale..' '..value..' @s')
