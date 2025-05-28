@@ -34,10 +34,7 @@ adipose.motion = true
 adipose.eyeHeight = true
 
 -- FUNCTIONS
-function SyncWeight(amount)
-	adipose.SetWeight(amount)
-end
-pings.SyncWeight = SyncWeight
+
 
 local function checkFood()
 	--only runs if OS isnt installed
@@ -94,6 +91,7 @@ local function setModelPartsVisibility(index)
         end
     end
 end
+pings.setModelPartsVisibility=setModelPartsVisibility
 
 local function setGranularity(index, granularity)
     local animation = adipose.weightStages[index].granularAnim
@@ -105,6 +103,7 @@ local function setGranularity(index, granularity)
     local offset = animation:getLength() * granularity
     animation:setOffset(offset)
 end
+pings.setGranularity=setGranularity
 
 -- EVENTS
 function events.tick()
@@ -121,7 +120,7 @@ function events.tick()
 		
 		local packet = math.floor(adipose.currentWeight*10)/10
 		--print(packet)
-		pings.SyncWeight(packet) -- Set model to show new weight
+		adipose.SetWeight(packet) -- set weight to current value
 		
     else 
 		timer = timer - 1
@@ -194,12 +193,12 @@ function adipose.SetWeight(amount)
     adipose.setScale(adipose.pehkui.MOTION, stage.motion)
     adipose.setScale(adipose.pehkui.EYE_HEIGHT, stage.eyeHeight)
 
-    setModelPartsVisibility(index)
-    setGranularity(index, granularity)
+    pings.setModelPartsVisibility(index)
+    pings.setGranularity(index, granularity)
 	
 	--print(index , granularity)
 
-    if not adipose.osCheck then config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)end
+    if not adipose.osCheck and not host:isHost() then config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)end
 end
 
 function adipose.setCurrentWeightStage(stage)
