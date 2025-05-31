@@ -9,11 +9,11 @@ Your one stop shop for Minecraft Figura weight gain.
 ## 📦 Pehkui Compatibility
 Per-Stage Hitboxes
 
-- When designating a stage you can also set certain Pehkui scales for each stage
+- When designating a stage you can set certain Pehkui scales for each stage
 - Automatically picks commands based on permissions
 - If Pehkui 4 All is installed lesserscale will be used if scale isnt available (ENSURE RELEVANT SCALES ARE ENABLED IN P4A CONFIG)
 - ENSURE "CHAT MESSAGES" SETTING IN FIGURA IS ON TO USE THIS FEATURE
 
 ## 🎂 Overstuffed Compatibility 
 Full Overstuffed Override!
-When overstuffed is installed, adipose will use overstuffed's weight values instead automatically!
+When overstuffed is installed, adipose will use overstuffed's weight values and pehkui commands automatically!
