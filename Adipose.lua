@@ -115,16 +115,7 @@ local function setStuffed(index, stuffed)
     local offset = animation:getLength() * stuffed
     animation:setOffset(offset)
 end
-
-local function scrubAnimation(animation, value)
-    if animation == '' then return end	
-	
-    animation:play()
-    animation:setSpeed(0)
-	
-    local offset = animation:getLength() * value
-    animation:setOffset(offset)
-end
+pings.setStuffed = setStuffed
 
 -- EVENTS
 function events.tick()
@@ -221,11 +212,10 @@ function adipose.setWeight(amount)
 		adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, stage.hitboxHeight)
 		adipose.setScale(adipose.pehkui.MOTION, stage.motion)
 		adipose.setScale(adipose.pehkui.EYE_HEIGHT, stage.eyeHeight)
-	
-		
     end
-    pings.setModelPartsVisibility(index)
-    
+	
+	pings.setModelPartsVisibility(index)
+  
 	
 	local stuffed = 0
 	if not adipose.osCheck then
@@ -234,12 +224,9 @@ function adipose.setWeight(amount)
 		stuffed = player:getNbt()["ForgeCaps"]["overstuffed:properties"]["stuffedbar"]/9
 	end
 	
-	--setStuffed(index, stuffed)
-	--pings.setGranularity(index, granularity)
-
-    scrubAnimation(adipose.weightStages[index].granularAnim, granularity)
-    scrubAnimation(adipose.weightStages[index].stuffedAnim, stuffed)
-    
+	pings.setGranularity(index, granularity)
+	pings.setStuffed(index, stuffed)
+	
 	--print(index , granularity)
 
     if not adipose.osCheck and not host:isHost() then config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)end
