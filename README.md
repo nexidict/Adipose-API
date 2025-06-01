@@ -4,6 +4,7 @@ Your one stop shop for Minecraft Figura weight gain.
 ## ⚙️ Features
 - Staged Based Weight Gain: designate Weight Stages with different modelparts or even whole models!
 - Granular Weight Gain: use an animation to smooth out the transition between stages!
+- Stuffed Animation: use an animation to reflect stomach fullness
 - Weight Saving via Config: your weight wont reset on a model reload!
 
 ## 📦 Pehkui Compatibility
@@ -16,4 +17,4 @@ Per-Stage Hitboxes
 
 ## 🎂 Overstuffed Compatibility 
 Full Overstuffed Override!
-When overstuffed is installed, adipose will use overstuffed's weight values and pehkui commands automatically!
+When overstuffed is installed, adipose will use overstuffed's stuffed, weight values and pehkui commands automatically!
