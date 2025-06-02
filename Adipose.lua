@@ -229,7 +229,7 @@ function adipose.setWeight(amount)
 	
 	--print(index , granularity)
 
-    if not adipose.osCheck and not host:isHost() then config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)end
+    if not adipose.osCheck and host:isHost() then config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)end
 end
 
 function adipose.setCurrentWeightStage(stage)
