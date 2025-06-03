@@ -154,7 +154,7 @@ end
 function events.entity_init()
 	if #adipose.weightStages == 0 then return end
 	
-	adipose.osCheck = client:isModLoaded("overstuffed")
+	adipose.osCheck = client.isModLoaded("overstuffed")
 	
 	if adipose.osCheck then 
 		local OSWeightBar = player:getNbt()["ForgeCaps"]["overstuffed:weightbar"]
@@ -168,8 +168,8 @@ function events.entity_init()
 		--print(adipose.currentWeight)
 	end
 	
-	adipose.pehkuiCheck = client:isModLoaded("pehkui")
-	adipose.p4aCheck = client:isModLoaded("pehkui4all")
+	adipose.pehkuiCheck = client.isModLoaded("pehkui")
+	adipose.p4aCheck = client.isModLoaded("pehkui4all")
 	adipose.opCheck = player:getPermissionLevel() == 4   
 	
 	--IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! \/
@@ -269,7 +269,7 @@ adipose.weightStage.__index = adipose.weightStage
 
 ---@return table
 function adipose.weightStage:newStage()
-    local self = setmetatable({
+    local obj = setmetatable({
         partsList = {},
         granularAnim = '',
 		stuffedAnim = '',
@@ -279,17 +279,17 @@ function adipose.weightStage:newStage()
         motion = 1
     }, adipose.weightStage)
 
-    table.insert(adipose.weightStages, self)
-    return self
+    table.insert(adipose.weightStages, obj)
+    return obj
 end
 
 
 -- WEIGHT STAGE METHODS
----@param parts table<Models|ModelPart>
+---@param parts [ModelPart]
 ---@return self
 function adipose.weightStage:setParts(parts)
     if type(parts) ~= 'table' then
-        if type(parts) ~= 'ModelParts' or type(partsList) ~= 'models' then
+        if type(parts) ~= 'ModelParts' or type(parts) ~= 'models' then
             error("partsList must be a table or a ModelPart/Models object")
         end
     end
@@ -305,14 +305,14 @@ function adipose.weightStage:setParts(parts)
     return self
 end
 
----@param animation animations
+---@param animation Animation
 ---@return self
 function adipose.weightStage:setGranularAnimation(animation)
     self.granularAnim = animation
     return self
 end
 
----@param animation animations
+---@param animation Animation
 ---@return self
 function adipose.weightStage:setStuffedAnimation(animation)
     self.stuffedAnim = animation
