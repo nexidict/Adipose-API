@@ -20,28 +20,28 @@ Figura library that adds Weight Gain functionality with animation support.
 1. Download the file [`Adipose.lua`](https://github.com/Tyrus5255/Adipose-API/blob/15b73dac8e77e5a7117cf1bcc6e2034bfa7e36e1/Adipose.lua) and drop it into your Figura avatar project.
 2. Import the library as follows: 
 ```lua
-var adipose = require("path.to.Adipose")
+adipose = require("path.to.Adipose")
 ```
 3. Create a new stage, and assign the model from `Models` or `ModelPart`s you need:
 ```lua
 -- Using Models
-var weightStage1 = adipose.new()
+weightStage0 = adipose.new()
   :setParts({ models.modelW0 })
 
-var weightStage1 = adipose.new()
+weightStage1 = adipose.new()
   :setParts({ models.modelW1 })
+```
 
-...
-
+```lua
 -- Using ModelParts
-var weightStage1 = adipose.new()
+weightStage0 = adipose.new()
   :setParts({ 
     models.model.BodyW0,
     models.model.TailW0,
     ...
   })
 
-var weightStage1 = adipose.new()
+weightStage1 = adipose.new()
   :setParts({
     models.model.BodyW1,
     models.model.TailW1,
