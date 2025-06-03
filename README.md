@@ -4,6 +4,9 @@ Figura library that adds Weight Gain functionality with animation support.
 - [Features](#️-features)
 - [Installation](#️-installation)
 - [Functions](#-functions)
+  - [Configuration](#configuration)
+  - [Setting Weight](#setting-weight)
+  - [Flags](#flags)
 
 ## ⚙️ Features
 - **Staged Based Weight Gain**: designate Weight Stages with different modelparts or even whole models.
@@ -39,15 +42,13 @@ adipose.weightStage:newStage()
 adipose.weightStage:newStage()
   :setParts({ 
     models.model.BodyW0,
-    models.model.TailW0,
-    ...
+    models.model.TailW0
   })
 
 adipose.weightStage:newStage()
   :setParts({
     models.model.BodyW1,
-    models.model.TailW1,
-    ...
+    models.model.TailW1
   })
 ```
 
