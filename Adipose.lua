@@ -128,6 +128,8 @@ pings.setStuffed = setStuffed
 
 -- EVENTS
 function events.tick()
+	if #adipose.weightStages == 0 then return end
+
     if timer < 0 then 
         timer = adipose.syncTimer
         
