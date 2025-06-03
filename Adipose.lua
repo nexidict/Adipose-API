@@ -1,9 +1,6 @@
 ---@class Adipose
 local adipose = {}
 
--- CONFIG
-config:setName("Adipose.Config")
-
 -- CONSTANTS
 adipose.minWeight = 100
 adipose.maxWeight = 1000
