@@ -1,1 +1,4 @@
 .vscode
+/.luarc.json
+/Adipose-API.code-workspace
+/install.bat
