@@ -188,17 +188,9 @@ function events.tick()
     if timer < 0 then
         timer = adipose.syncTimer
 
-        if not adipose.osCheck then --Update the weight value
-            local deltaWeight = checkFood() --All things that affect weight
-            adipose.currentWeight = adipose.currentWeight + deltaWeight
-        else
-            --ignore everything and just sync with overstuffed
-            adipose.currentWeight = player:getNbt()["ForgeCaps"]["overstuffed:weightbar"]["currentweight"]
-        end
-
-        local packet = math.floor(adipose.currentWeight * 10) / 10
-        --print(packet)
-        adipose.setWeight(packet) -- set weight to current value
+        adipose.setWeight(adipose.osCheck and
+            player:getNbt()["ForgeCaps"]["overstuffed:weightbar"]["currentweight"] or
+            (adipose.currentWeight + checkFood()))
     else
         timer = timer - 1
     end
@@ -228,7 +220,6 @@ local function printStartupMessage()
 end
 
 function events.entity_init()
-    if #adipose.weightStages == 0 then return end
 
     adipose.osCheck = client.isModLoaded("overstuffed")
 
@@ -257,11 +248,15 @@ end
 ---Sets weight by amount. From adipose.minWeight (100) to adipose.maxWeight (1000).
 ---@param amount number
 function adipose.setWeight(amount)
-    amount = math.clamp(amount, adipose.minWeight, adipose.maxWeight)
+    if #adipose.weightStages == 0 then return end
 
-    local index, granularity = calculateProgressFromWeight(amount)
+    adipose.currentWeight = math.clamp(
+        math.floor(amount * 10) / 10,
+        adipose.minWeight,
+        adipose.maxWeight)
 
-    adipose.currentWeight = amount
+    local index, granularity = calculateProgressFromWeight(adipose.currentWeight)
+
     adipose.currentWeightStage = index
 
     setStageScale(index, granularity)
@@ -274,7 +269,7 @@ function adipose.setWeight(amount)
     --print(index , granularity)
 
     if not adipose.osCheck and host:isHost() then
-        config:save("adipose.currentWeight", math.floor(adipose.currentWeight * 10) / 10)
+        config:save("adipose.currentWeight", adipose.currentWeight)
         config:save("adipose.currentWeightStage", adipose.currentWeightStage)
     end
 end
