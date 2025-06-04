@@ -73,7 +73,7 @@ local function calculateProgressFromWeight(weight)
 end
 
 local function setScale(scale, value)
-    if not player:isLoaded() or not adipose.pehkuiCheck or not adipose.scaling then return end
+    if not player:isLoaded() or not adipose.pehkuiCheck or not adipose.scaling or not value then return end
 	
 	if adipose.opCheck then 
 		host:sendChatCommand('scale set '..scale..' '..value..' @s')
@@ -86,6 +86,15 @@ local function setScale(scale, value)
 		scale = string.sub(scale, prefixIndex+1,-1) --this command is also ass, returns scale without a prefix because god's light doesnt shine here
 		host:sendChatCommand('lesserscale set '..value..' '..scale)
 	end
+end
+
+local function setGranularScale(scaleName, scaleMinWeight, scaleMaxWeight, granularity)
+    if scaleMinWeight and scaleMinWeight then
+        local scaleValue = math.map(
+            granularity, 0, 1,
+            scaleMinWeight, scaleMaxWeight)
+        setScale(scaleName, scaleValue)
+    end
 end
 
 -- MODEL FUNCTIONS
@@ -216,16 +225,28 @@ function adipose.setWeight(amount)
     adipose.currentWeight = amount
     adipose.currentWeightStage = index
 
-	if oldindex ~= index then
-		oldindex = index
-		local stage = adipose.weightStages[index]
-		setScale(adipose.pehkui.HITBOX_WIDTH, stage.hitboxWidth)
-		setScale(adipose.pehkui.HITBOX_HEIGHT, stage.hitboxHeight)
-		setScale(adipose.pehkui.MOTION, stage.motion)
-		setScale(adipose.pehkui.EYE_HEIGHT, stage.eyeHeight)
+    if #adipose.weightStages == 1 then 
+        local stage = adipose.weightStages[index]
+        setGranularScale(
+            adipose.pehkui.HITBOX_WIDTH,
+            stage.scale.hitboxWidth.minWeight,
+            stage.scale.hitboxWidth.maxWeight,
+            granularity
+        )
+        setScale(adipose.pehkui.HITBOX_HEIGHT, stage.hitboxHeight)
+        setScale(adipose.pehkui.MOTION, stage.motion)
+        setScale(adipose.pehkui.EYE_HEIGHT, stage.eyeHeight)
+    else
+        if oldindex ~= index then
+            oldindex = index
+            local stage = adipose.weightStages[index]
+            setScale(adipose.pehkui.HITBOX_WIDTH, stage.hitboxWidth)
+            setScale(adipose.pehkui.HITBOX_HEIGHT, stage.hitboxHeight)
+            setScale(adipose.pehkui.MOTION, stage.motion)
+            setScale(adipose.pehkui.EYE_HEIGHT, stage.eyeHeight)
+        end
+        pings.setModelPartsVisibility(index)
     end
-	
-	pings.setModelPartsVisibility(index)
   
 	local stuffed = 0
 	if not adipose.osCheck then
@@ -264,21 +285,38 @@ end
 -- WEIGHT STAGE
 ---@class Adipose.WeightStage[]
 adipose.weightStages = {}
+---@class Adipose.WeightStage
 adipose.weightStage = {}
 adipose.weightStage.__index = adipose.weightStage
+adipose.weightStage.partsList = {}
+adipose.weightStage.granularAnim = ""
+adipose.weightStage.stuffedAnim = ""
+adipose.weightStage.hitboxWidth = nil
+adipose.weightStage.hitboxHeight = nil
+adipose.weightStage.eyeHeight = nil
+adipose.weightStage.motion = nil
+adipose.weightStage.scale = {
+    hitboxWidth = {
+        minWeight = nil,
+        maxWeight = nil,
+    },
+    hitboxHeight = {
+        minWeight = nil,
+        maxWeight = nil,
+    },
+    eyeHeight = {
+        minWeight = nil,
+        maxWeight = nil,
+    },
+    motion = {
+        minWeight = nil,
+        maxWeight = nil,
+    },
+}
 
----@return table
-function adipose.weightStage:newStage()
-    local obj = setmetatable({
-        partsList = {},
-        granularAnim = '',
-		stuffedAnim = '',
-        hitboxWidth = 1,
-        hitboxHeight = 1,
-        eyeHeight = 1,
-        motion = 1
-    }, adipose.weightStage)
-
+---@return Adipose.WeightStage
+function adipose.newStage()
+    local obj = setmetatable({}, adipose.weightStage)
     table.insert(adipose.weightStages, obj)
     return obj
 end
@@ -344,6 +382,15 @@ end
 ---@return self
 function adipose.weightStage:setMotion(motion)
     self.motion = motion
+    return self
+end
+
+---@param minWeight number
+---@param maxWeight number
+---@return self
+function adipose.weightStage:setHitboxWidthRange(minWeight, maxWeight)
+    self.scale.hitboxWidth.minWeight = minWeight
+    self.scale.hitboxWidth.maxWeight = maxWeight
     return self
 end
 
