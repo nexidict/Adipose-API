@@ -97,13 +97,15 @@ end
 
 -- MODEL FUNCTIONS
 local function setModelPartsVisibility(index)
+    local stage = adipose.getStage(index)
+
     local visibleParts = {}
-    for _, p in ipairs(adipose.weightStages[index].partsList) do
+    for _, p in ipairs(stage.partsList) do
         visibleParts[p] = true
     end
 
-    for _, s in ipairs(adipose.weightStages) do
-        for _, p in ipairs(s.partsList) do
+    for _, s in pairs(adipose.getStages()) do
+        for _, p in pairs(s.partsList) do
             p:setVisible(visibleParts[p] == true)
         end
     end
@@ -318,6 +320,17 @@ function adipose.newStage()
     local obj = setmetatable({}, adipose.weightStage)
     table.insert(adipose.weightStages, obj)
     return obj
+end
+
+---@param index number
+---@return Adipose.WeightStage
+function adipose.getStage(index)
+    return adipose.weightStages[index]
+end
+
+---@return [Adipose.WeightStage]
+function adipose.getStages()
+    return adipose.weightStages
 end
 
 -- WEIGHT STAGE METHODS
