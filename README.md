@@ -74,9 +74,9 @@ You can also set other configuration parameters. Check out the list here: [Confi
 #### Full example
 ```lua
 local adipose = require('Adipose')
+```
 
-...
-
+```lua
 adipose.weightStage:newStage()
       :setParts({ models.modelW0 })
       :setHitboxWidth(1.1)
