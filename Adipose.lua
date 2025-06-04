@@ -118,27 +118,34 @@ local function setModelPartsVisibility(index)
 end
 pings.setModelPartsVisibility = setModelPartsVisibility
 
-local function setGranularity(index, granularity)
-    local animation = adipose.weightStages[index].granularAnim
-    if animation == "" then return end
+---@class Adipose.GranularAnimation
+adipose.granularAnimation = {}
+adipose.granularAnimation.__index = adipose.granularAnimation
+adipose.granularAnimation.animation = nil
 
-    animation:play()
+function adipose.granularAnimation.new(animation)
     animation:setSpeed(0)
+    animation:play()
+    return setmetatable({
+        animation = animation,
+    }, adipose.granularAnimation)
+end
 
-    local offset = animation:getLength() * granularity
-    animation:setOffset(offset)
+function adipose.granularAnimation:setOffset(value)
+    self.animation:setOffset(self.animation:getLength() * value)
+end
+
+local function setGranularity(index, granularity)
+    local anim = adipose.getStage(index).granularAnim
+    if not anim then return end
+    anim:setOffset(granularity)
 end
 pings.setGranularity = setGranularity
 
 local function setStuffed(index, stuffed)
-    local animation = adipose.weightStages[index].stuffedAnim
-    if animation == "" then return end
-
-    animation:play()
-    animation:setSpeed(0)
-
-    local offset = animation:getLength() * stuffed
-    animation:setOffset(offset)
+    local anim = adipose.getStage(index).stuffedAnim
+    if not anim then return end
+    anim:setOffset(stuffed)
 end
 pings.setStuffed = setStuffed
 
@@ -290,8 +297,6 @@ adipose.weightStages = {}
 adipose.weightStage = {}
 adipose.weightStage.__index = adipose.weightStage
 adipose.weightStage.partsList = {}
-adipose.weightStage.granularAnim = ""
-adipose.weightStage.stuffedAnim = ""
 adipose.weightStage.hitboxWidth = nil
 adipose.weightStage.hitboxHeight = nil
 adipose.weightStage.eyeHeight = nil
@@ -314,6 +319,8 @@ adipose.weightStage.scale = {
         maxWeight = nil,
     },
 }
+adipose.weightStage.granularAnim = nil
+adipose.weightStage.stuffedAnim = nil
 
 ---@return Adipose.WeightStage
 function adipose.newStage()
@@ -353,14 +360,14 @@ end
 ---@param animation Animation
 ---@return self
 function adipose.weightStage:setGranularAnimation(animation)
-    self.granularAnim = animation
+    self.granularAnim = adipose.granularAnimation.new(animation)
     return self
 end
 
 ---@param animation Animation
 ---@return self
 function adipose.weightStage:setStuffedAnimation(animation)
-    self.stuffedAnim = animation
+    self.stuffedAnim = adipose.granularAnimation.new(animation)
     return self
 end
 
