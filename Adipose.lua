@@ -19,21 +19,22 @@ adipose.syncTimer = 20
 local timer = adipose.syncTimer
 local oldindex = nil
 
----@class Adipose.ScaleOption
-adipose.scaleOption = {}
-adipose.scaleOption.__index = adipose.scaleOption
-adipose.scaleOption.minWeight = nil
-adipose.scaleOption.maxWeight = nil
-adipose.scaleOption.supported = {
+adipose.pehkui = {
     ["pehkui:hitbox_width"] = true,
     ["pehkui:hitbox_height"] = true,
     ["pehkui:motion"] = true,
     ["pehkui:eye_height"] = true,
 }
 
+---@class Adipose.ScaleOption
+adipose.scaleOption = {}
+adipose.scaleOption.__index = adipose.scaleOption
+adipose.scaleOption.minWeight = nil
+adipose.scaleOption.maxWeight = nil
+
 ---@param minWeight number Value for static scaling or minimum weight for dynamic scaling
 ---@param maxWeight number? Optional value at maximum weight for dynamic scaling
-function adipose.scaleOption.new(minWeight, maxWeight)
+function adipose.newScaleOption(minWeight, maxWeight)
     return setmetatable({
         minWeight = minWeight,
         maxWeight = maxWeight
@@ -294,14 +295,17 @@ adipose.weightStages = {}
 ---@class Adipose.WeightStage
 adipose.weightStage = {}
 adipose.weightStage.__index = adipose.weightStage
-adipose.weightStage.partsList = {}
+adipose.weightStage.partsList = nil
 adipose.weightStage.granularAnim = nil
 adipose.weightStage.stuffedAnim = nil
-adipose.weightStage.scaleOptions = {}
+adipose.weightStage.scaleOptions = nil
 
 ---@return Adipose.WeightStage
 function adipose.newStage()
-    local obj = setmetatable({}, adipose.weightStage)
+    local obj = setmetatable({
+        partsList = {},
+        scaleOptions = {},
+    }, adipose.weightStage)
     table.insert(adipose.weightStages, obj)
     return obj
 end
@@ -352,9 +356,9 @@ end
 ---@param minWeight number Value for static scaling or value at minimum weight of this stage for dynamic scaling.
 ---@param maxWeight? number Optional value at maximum weight of this stage for dynamic scaling.
 ---@return self
-function adipose.weightStage:setScaleOption(scale, minWeight, maxWeight)
-    assert(adipose.scaleOption.supported[scale], "Unsupported scaling option")
-    self.scaleOptions[scale] = adipose.scaleOption.new(minWeight, maxWeight)
+function adipose.weightStage:addScaleOption(scale, minWeight, maxWeight)
+    assert(adipose.pehkui[scale], "Unsupported scaling option")
+    self.scaleOptions[scale] = adipose.newScaleOption(minWeight, maxWeight)
     return self
 end
 
