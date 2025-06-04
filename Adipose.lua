@@ -45,6 +45,12 @@ local function checkFood()
     return deltaWeight
 end
 
+local function getSaturation()
+    return adipose.osCheck and
+        (player:getNbt()["ForgeCaps"]["overstuffed:properties"]["stuffedbar"] / 9) or
+        (player:getSaturation() / 20)
+end
+
 local function calculateWeightFromIndex(index)
     if index == #adipose.weightStages + 1 then return adipose.maxWeight end
 
@@ -247,15 +253,9 @@ function adipose.setWeight(amount)
         pings.setModelPartsVisibility(index)
     end
 
-    local stuffed = 0
-    if not adipose.osCheck then
-        stuffed = player:getSaturation() / 20
-    else
-        stuffed = player:getNbt()["ForgeCaps"]["overstuffed:properties"]["stuffedbar"] / 9
-    end
 
     pings.setGranularity(index, granularity)
-    pings.setStuffed(index, stuffed)
+    pings.setStuffed(index, getSaturation())
 
     --print(index , granularity)
 
