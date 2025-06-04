@@ -20,7 +20,6 @@ adipose.pehkui = {
 
 -- VARIABLES
 adipose.currentWeight = config:load("adipose.currentWeight") or adipose.minWeight
-adipose.granularWeight = 0
 adipose.currentWeightStage = config:load("adipose.currentWeightStage") or 1
 
 adipose.syncTimer = 20
@@ -217,8 +216,6 @@ function adipose.setWeight(amount)
     adipose.currentWeight = amount
     adipose.currentWeightStage = index
 
-    adipose.granularWeight = granularity
-	
 	if oldindex ~= index then
 		oldindex = index
 		local stage = adipose.weightStages[index]
