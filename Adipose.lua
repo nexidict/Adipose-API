@@ -321,22 +321,18 @@ function adipose.newStage()
 end
 
 -- WEIGHT STAGE METHODS
----@param parts [ModelPart]
+---@param parts ModelPart|[ModelPart]
 ---@return self
 function adipose.weightStage:setParts(parts)
-    if type(parts) ~= "table" then
-        if type(parts) ~= "ModelParts" or type(parts) ~= "models" then
-            error("partsList must be a table or a ModelPart/Models object")
-        end
+    assert(parts, "Invalid parts")
+    if type(parts) == "ModelPart" then
+        parts = { parts }
     end
-
-    -- Validate contents of the table
+    assert(type(parts) == "table", "Invalid type for parts")
     for i, p in ipairs(parts) do
-        if type(p) == "ModelParts" or type(p) == "models" then
-            error("The body part at position " .. i .. " is not a models or a ModelPart")
-        end
+        assert(p, "Invalid part at position " .. i)
+        assert(type(p) == "ModelPart", "Invalid type for part at position " .. i)
     end
-
     self.partsList = parts
     return self
 end
