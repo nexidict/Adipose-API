@@ -76,9 +76,9 @@ end
 
 local function calculateProgressFromWeight(weight)
     local normalized = (weight - adipose.minWeight) / (adipose.maxWeight - adipose.minWeight)
-    local exactWeightStage = normalized * #adipose.weightStages + 1
+    local exactWeightStage = (normalized * #adipose.weightStages) + 1
 
-    if exactWeightStage == #adipose.weightStages + 1 then
+    if exactWeightStage == (#adipose.weightStages + 1) then
         return #adipose.weightStages, 1
     end
 
@@ -95,12 +95,12 @@ local function setScale(scale, value)
         host:sendChatCommand("scale set " .. scale .. " " .. value .. " @s")
     elseif adipose.osCheck then
         local prefixIndex = string.find(scale, ":")
-        --this command is ass, returns scale without a prefix because abyssal didnt take my suggestion
+        -- this command is ass, returns scale without a prefix because abyssal didnt take my suggestion
         scale = string.sub(scale, prefixIndex + 1, -1)
         host:sendChatCommand("overstuffed setScale " .. scale .. " " .. value)
     elseif adipose.p4aCheck then
         local prefixIndex = string.find(scale, ":")
-        --this command is also ass, returns scale without a prefix because god's light doesnt shine here
+        -- this command is also ass, returns scale without a prefix because god's light doesnt shine here
         scale = string.sub(scale, prefixIndex + 1, -1)
         host:sendChatCommand("lesserscale set " .. value .. " " .. scale)
     end
@@ -220,8 +220,10 @@ local function printStartupMessage()
 end
 
 function events.entity_init()
-
+    adipose.pehkuiCheck = client.isModLoaded("pehkui")
+    adipose.p4aCheck = client.isModLoaded("pehkui4all")
     adipose.osCheck = client.isModLoaded("overstuffed")
+    adipose.opCheck = player:getPermissionLevel() == 4
 
     if adipose.osCheck then
         local OSWeightBar = player:getNbt()["ForgeCaps"]["overstuffed:weightbar"]
@@ -234,10 +236,6 @@ function events.entity_init()
         --print(adipose.minWeight)
         --print(adipose.currentWeight)
     end
-
-    adipose.pehkuiCheck = client.isModLoaded("pehkui")
-    adipose.p4aCheck = client.isModLoaded("pehkui4all")
-    adipose.opCheck = player:getPermissionLevel() == 4
 
     printStartupMessage()
 
@@ -261,7 +259,6 @@ function adipose.setWeight(amount)
 
     setStageScale(index, granularity)
 
-
     pings.setModelPartsVisibility(index)
     pings.setGranularity(index, granularity)
     pings.setStuffed(index, getSaturation())
@@ -281,14 +278,12 @@ function adipose.setCurrentWeightStage(stage)
 end
 
 function adipose.adjustWeightByAmount(amount)
-    amount = math.clamp((adipose.currentWeight + math.floor(amount)), adipose.minWeight,
-        adipose.maxWeight)
+    amount = math.clamp((adipose.currentWeight + math.floor(amount)), adipose.minWeight, adipose.maxWeight)
     adipose.setWeight(amount)
 end
 
 function adipose.adjustWeightByStage(amount)
-    amount = math.clamp((adipose.currentWeightStage + math.floor(amount)), 1, #adipose.weightStages +
-    1)
+    amount = math.clamp((adipose.currentWeightStage + math.floor(amount)), 1, #adipose.weightStages + 1)
     adipose.setWeight(calculateWeightFromIndex(amount) + 1) -- +1 is padding for hunger decay
 end
 
