@@ -11,13 +11,6 @@ adipose.maxWeight = 1000
 
 adipose.weightRate = 0.01
 
-adipose.pehkui = {
-    HITBOX_WIDTH  = "pehkui:hitbox_width",
-    HITBOX_HEIGHT = "pehkui:hitbox_height",
-    MOTION        = "pehkui:motion",
-    EYE_HEIGHT    = "pehkui:eye_height",
-}
-
 -- VARIABLES
 adipose.currentWeight = config:load("adipose.currentWeight") or adipose.minWeight
 adipose.currentWeightStage = config:load("adipose.currentWeightStage") or 1
@@ -25,6 +18,27 @@ adipose.currentWeightStage = config:load("adipose.currentWeightStage") or 1
 adipose.syncTimer = 20
 local timer = adipose.syncTimer
 local oldindex = nil
+
+---@class Adipose.ScaleOption
+adipose.scaleOption = {}
+adipose.scaleOption.__index = adipose.scaleOption
+adipose.scaleOption.minWeight = nil
+adipose.scaleOption.maxWeight = nil
+adipose.scaleOption.supported = {
+    ["pehkui:hitbox_width"] = true,
+    ["pehkui:hitbox_height"] = true,
+    ["pehkui:motion"] = true,
+    ["pehkui:eye_height"] = true,
+}
+
+---@param minWeight number Value for static scaling or minimum weight for dynamic scaling
+---@param maxWeight number? Optional value at maximum weight for dynamic scaling
+function adipose.scaleOption.new(minWeight, maxWeight)
+    return setmetatable({
+        minWeight = minWeight,
+        maxWeight = maxWeight
+    }, adipose.scaleOption)
+end
 
 
 -- FUNCTIONS
@@ -98,6 +112,24 @@ local function setGranularScale(scaleName, scaleMinWeight, scaleMaxWeight, granu
             granularity, 0, 1,
             scaleMinWeight, scaleMaxWeight)
         setScale(scaleName, scaleValue)
+    end
+end
+
+local function setStageScale(index, granularity)
+    local stage = adipose.getStage(index)
+    for scale, value in pairs(stage:getScaleOptions()) do
+        if value.maxWeight then
+            -- Dynamic Scaling
+            setGranularScale(
+                scale, 
+                value.minWeight,
+                value.maxWeight,
+                granularity)
+        elseif oldindex ~= index then
+            oldindex = index
+            -- Static Scaling
+            setScale(scale, value.minWeight)
+        end
     end
 end
 
@@ -218,11 +250,6 @@ function events.entity_init()
 
     printStartupMessage()
 
-    setScale(adipose.pehkui.HITBOX_WIDTH, adipose.weightStages[1].hitboxWidth)
-    setScale(adipose.pehkui.HITBOX_HEIGHT, adipose.weightStages[1].hitboxHeight)
-    setScale(adipose.pehkui.MOTION, adipose.weightStages[1].motion)
-    setScale(adipose.pehkui.EYE_HEIGHT, adipose.weightStages[1].eyeHeight)
-
     adipose.setWeight(adipose.currentWeight)
 end
 
@@ -237,30 +264,10 @@ function adipose.setWeight(amount)
     adipose.currentWeight = amount
     adipose.currentWeightStage = index
 
-    if #adipose.weightStages == 1 then 
-        local stage = adipose.weightStages[index]
-        setGranularScale(
-            adipose.pehkui.HITBOX_WIDTH,
-            stage.scale.hitboxWidth.minWeight,
-            stage.scale.hitboxWidth.maxWeight,
-            granularity
-        )
-        setScale(adipose.pehkui.HITBOX_HEIGHT, stage.hitboxHeight)
-        setScale(adipose.pehkui.MOTION, stage.motion)
-        setScale(adipose.pehkui.EYE_HEIGHT, stage.eyeHeight)
-    else
-        if oldindex ~= index then
-            oldindex = index
-            local stage = adipose.weightStages[index]
-            setScale(adipose.pehkui.HITBOX_WIDTH, stage.hitboxWidth)
-            setScale(adipose.pehkui.HITBOX_HEIGHT, stage.hitboxHeight)
-            setScale(adipose.pehkui.MOTION, stage.motion)
-            setScale(adipose.pehkui.EYE_HEIGHT, stage.eyeHeight)
-        end
-        pings.setModelPartsVisibility(index)
-    end
+    setStageScale(index, granularity)
 
 
+    pings.setModelPartsVisibility(index)
     pings.setGranularity(index, granularity)
     pings.setStuffed(index, getSaturation())
 
@@ -293,34 +300,14 @@ end
 -- WEIGHT STAGE
 ---@class Adipose.WeightStage[]
 adipose.weightStages = {}
+
 ---@class Adipose.WeightStage
 adipose.weightStage = {}
 adipose.weightStage.__index = adipose.weightStage
 adipose.weightStage.partsList = {}
-adipose.weightStage.hitboxWidth = nil
-adipose.weightStage.hitboxHeight = nil
-adipose.weightStage.eyeHeight = nil
-adipose.weightStage.motion = nil
-adipose.weightStage.scale = {
-    hitboxWidth = {
-        minWeight = nil,
-        maxWeight = nil,
-    },
-    hitboxHeight = {
-        minWeight = nil,
-        maxWeight = nil,
-    },
-    eyeHeight = {
-        minWeight = nil,
-        maxWeight = nil,
-    },
-    motion = {
-        minWeight = nil,
-        maxWeight = nil,
-    },
-}
 adipose.weightStage.granularAnim = nil
 adipose.weightStage.stuffedAnim = nil
+adipose.weightStage.scaleOptions = {}
 
 ---@return Adipose.WeightStage
 function adipose.newStage()
@@ -371,43 +358,19 @@ function adipose.weightStage:setStuffedAnimation(animation)
     return self
 end
 
----@param offset number
+---@param scale string Name of scaling option, e.g. "pehkui:hitbox_width"
+---@param minWeight number Value for static scaling or value at minimum weight of this stage for dynamic scaling.
+---@param maxWeight? number Optional value at maximum weight of this stage for dynamic scaling.
 ---@return self
-function adipose.weightStage:setEyeHeight(offset)
-    self.eyeHeight = offset
+function adipose.weightStage:setScaleOption(scale, minWeight, maxWeight)
+    assert(adipose.scaleOption.supported[scale], "Unsupported scaling option")
+    self.scaleOptions[scale] = adipose.scaleOption.new(minWeight, maxWeight)
     return self
 end
 
----@param width number
----@return self
-function adipose.weightStage:setHitboxWidth(width)
-    self.hitboxWidth = width
-    return self
-end
-
----@param height number
----@return self
-function adipose.weightStage:setHitboxHeight(height)
-    self.hitboxHeight = height
-    return self
-end
-
----@param motion number
----@return self
-function adipose.weightStage:setMotion(motion)
-    self.motion = motion
-    return self
-end
-
----@param minWeight number
----@param maxWeight number
----@return self
-function adipose.weightStage:setHitboxWidthRange(minWeight, maxWeight)
-    self.scale.hitboxWidth.minWeight = minWeight
-    self.scale.hitboxWidth.maxWeight = maxWeight
-    return self
-end
-
+---@return [Adipose.ScaleOption]
+function adipose.weightStage:getScaleOptions()
+    return self.scaleOptions
 end
 
 return adipose
