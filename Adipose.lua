@@ -26,10 +26,6 @@ adipose.syncTimer = 20
 local timer = adipose.syncTimer
 local oldindex = nil
 
--- FLAGS
-adipose.hitbox = true
-adipose.motion = true
-adipose.eyeHeight = true
 
 -- FUNCTIONS
 local function checkFood()
@@ -396,61 +392,6 @@ function adipose.weightStage:setHitboxWidthRange(minWeight, maxWeight)
     return self
 end
 
--- FLAGS METHODS
----@param state boolean
-function adipose.setHitboxState(state)
-    local previousValue = adipose.hitbox
-
-    if state ~= previousValue then
-        adipose.hitbox = state
-
-        if state == true then
-            setScale(adipose.pehkui.HITBOX_WIDTH,
-                adipose.weightStages[adipose.currentWeightStage].hitboxWidth)
-            setScale(adipose.pehkui.HITBOX_HEIGHT,
-                adipose.weightStages[adipose.currentWeightStage].hitboxWidth)
-            return
-        end
-
-        setScale(adipose.pehkui.HITBOX_WIDTH, 1)
-        setScale(adipose.pehkui.HITBOX_HEIGHT, 1)
-        return
-    end
-end
-
----@param state boolean
-function adipose.setMotionState(state)
-    local previousValue = adipose.motion
-
-    if state ~= previousValue then
-        adipose.motion = state
-
-        if state == true then
-            setScale(adipose.pehkui.MOTION, adipose.weightStages[adipose.currentWeightStage].motion)
-            return
-        end
-
-        setScale(adipose.pehkui.MOTION, 1)
-        return
-    end
-end
-
----@param state boolean
-function adipose.setEyeHeightState(state)
-    local previousValue = adipose.eyeHeight
-
-    if state ~= previousValue then
-        adipose.eyeHeight = state
-
-        if state == true then
-            setScale(adipose.pehkui.EYE_HEIGHT,
-                adipose.weightStages[adipose.currentWeightStage].eyeHeight)
-            return
-        end
-
-        setScale(adipose.pehkui.EYE_HEIGHT, 1)
-        return
-    end
 end
 
 return adipose
