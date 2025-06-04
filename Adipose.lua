@@ -1,6 +1,10 @@
 ---@class Adipose
 local adipose = {}
 
+-- CONFIG
+adipose.scaling = true
+adipose.verbose = true
+
 -- CONSTANTS
 adipose.minWeight = 100
 adipose.maxWeight = 1000
@@ -22,8 +26,6 @@ adipose.currentWeightStage = config:load("adipose.currentWeightStage") or 1
 adipose.syncTimer = 20
 local timer = adipose.syncTimer
 local oldindex = nil
-
-adipose.scaling = true
 
 -- FLAGS
 adipose.hitbox = true
@@ -150,6 +152,29 @@ function events.tick()
 	end
 end
 
+local function printStartupMessage()
+    if not adipose.verbose then
+        return
+    end
+    if not adipose.scaling then
+        print("Scaling Manually Disabled")
+        return
+    end
+    if not adipose.pehkuiCheck then
+        print("Pehkui not Installed, Scaling Disabled")
+        return
+    end
+    if adipose.opCheck then
+        print("OP Detected, Using /scale for Scaling")
+    elseif adipose.osCheck then
+        print("Overstuffed Detected, Using /overstuffed setScale for Scaling")
+    elseif adipose.p4aCheck then
+        print("Pehkui 4 All Detected, Using /lesserscale for Scaling")
+    else
+        print("Insufficient Permissions for Scaling, Scaling Disabled")
+    end
+end
+
 function events.entity_init()
 	if #adipose.weightStages == 0 then return end
 	
@@ -171,28 +196,7 @@ function events.entity_init()
 	adipose.p4aCheck = client.isModLoaded("pehkui4all")
 	adipose.opCheck = player:getPermissionLevel() == 4   
 	
-	--IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! \/
-	
-	--Scaling Startup Message
-	if adipose.scaling then
-		if adipose.pehkuiCheck then
-			if adipose.opCheck then
-				print("OP Detected, Using /scale for Scaling")
-			elseif adipose.osCheck then
-				print("Overstuffed Detected, Using /overstuffed setScale for Scaling")
-			elseif adipose.p4aCheck then
-				print("Pehkui 4 All Detected, Using /lesserscale for Scaling")
-			else
-				print("Insufficient Permissions for Scaling, Scaling Disabled")
-			end	
-		else
-			print("Pehkui not Installed, Scaling Disabled")
-		end
-	else 
-	
-	print("Scaling Manually Disabled")		
-	end
-	--IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! /\
+    printStartupMessage()
 
     setScale(adipose.pehkui.HITBOX_WIDTH, adipose.weightStages[1].hitboxWidth)
     setScale(adipose.pehkui.HITBOX_HEIGHT, adipose.weightStages[1].hitboxHeight)
