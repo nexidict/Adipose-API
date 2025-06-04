@@ -166,21 +166,21 @@ local function printStartupMessage()
         return
     end
     if not adipose.scaling then
-        print("Scaling Manually Disabled")
+        print("Adipose: scaling disabled (manual)")
         return
     end
     if not adipose.pehkuiCheck then
-        print("Pehkui not Installed, Scaling Disabled")
+        print("Adipose: scaling disabled (pehkui not installed)")
         return
     end
     if adipose.opCheck then
-        print("OP Detected, Using /scale for Scaling")
+        print("Adipose: scaling enabled (operator permissions)")
     elseif adipose.osCheck then
-        print("Overstuffed Detected, Using /overstuffed setScale for Scaling")
+        print("Adipose: scaling enabled (overstuffed detected)")
     elseif adipose.p4aCheck then
-        print("Pehkui 4 All Detected, Using /lesserscale for Scaling")
+        print("Adipose: scaling enabled (pehkui4all detected)")
     else
-        print("Insufficient Permissions for Scaling, Scaling Disabled")
+        print("Adipose: scaling disabled (insufficient permissions)")
     end
 end
 
