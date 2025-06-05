@@ -27,18 +27,18 @@ Figura library that adds Weight Gain functionality with animation support.
 ```lua
 local adipose = require("Adipose")
 ```
-3. Create a new stage, and assign the model from `Models` or `ModelPart`s you need:
+3. Create a new stage, and assign the models or model parts you need:
 ```lua
 -- Using Models
 adipose.weightStage:newStage()
-  :setParts({ models.modelW0 })
+  :setParts(models.modelW0)
 
 adipose.weightStage:newStage()
-  :setParts({ models.modelW1 })
+  :setParts(models.modelW1)
 ```
 
 ```lua
--- Using ModelParts
+-- Using ModelParts in a table
 adipose.weightStage:newStage()
   :setParts({ 
     models.model.BodyW0,
@@ -61,28 +61,37 @@ You can also set other configuration parameters. Check out the list here: [Confi
 
 ### Configuration
 
-| Configuration                                 | Description                                                                         |
-|-----------------------------------------------|-------------------------------------------------------------------------------------|
-| `setParts(parts: table<Models\|ModelPart>)`   | Parts of the model/model that shows when at that specific weight stage.             |
-| `setGranularAnimation(animation: animations)` | Animation used to show how much weight you're gaining before the next weight stage. |
-| `setStuffedAnimation(animation: animations)`  | Animation used to show how stuffed you are.                                         |
-| `setEyeHeight(offset: number)`                | This is the value used by Pehkui (and relatives) to set `pehkui:eye_height`.        |
-| `setHitboxWidth(width: number)`               | This is the value used by Pehkui (and relatives) to set `pehkui:hitbox_width`.      |
-| `setHitboxHeight(height: number)`             | This is the value used by Pehkui (and relatives) to set `pehkui:hitbox_height`.     |
-| `setMotion(motion: number)`                   | This is the value used by Pehkui (and relatives) to set `pehkui:motion`.            |
+| Configuration                                           | Description                                                                         |
+|---------------------------------------------------------|-------------------------------------------------------------------------------------|
+| `setParts(parts: ModelPart\|[ModelPart])`               | Model or model parts that show when at that specific weight stage.                  |
+| `setGranularAnimation(animation: Animation)`            | Animation used to show how much weight you're gaining before the next weight stage. |
+| `setStuffedAnimation(animation: Animation)`             | Animation used to show how stuffed you are.                                         |
+| `addScaleOption(minWeight: number, maxWeight: number?)` | Add a scaling option used by Pehkui.                                                |
+
+#### Scaling Options
+
+`addScaleOption` supports two modes of operation:
+
+- Static - `addScaleOption(minWeight)` - Scaling option is set to constant `minWeight` value for that weight stage.
+- Dynamic - `addScaleOption(minWeight, maxWeight)` - Scaling option varies from `minWeight` value to `maxWeight` value for that stage.
+
+`addScaleOption` supports the following scaling options:
+
+- `pehkui:eye_height`
+- `pehkui:hitbox_height`
+- `pehkui:hitbox_width`
+- `pehkui:motion`
 
 #### Full example
 ```lua
 local adipose = require('Adipose')
-```
 
-```lua
 adipose.weightStage:newStage()
-      :setParts({ models.modelW0 })
-      :setHitboxWidth(1.1)
-      :setHitboxHeight(1.1)
-      :setMotion(1.2)
-      :setEyeHeight(1)
+      :setParts(models.modelW0)
+      :addScaleOption("pehkui:eye_height", 1.2) -- Static
+      :addScaleOption("pehkui:hitbox_height", 1.1) -- Static
+      :addScaleOption("pehkui:hitbox_width", 1, 2) -- Dynamic
+      :addScaleOption("pehkui:motion", 1, 0.8) -- Dynamic
 ```
 
 ### Setting Weight
@@ -93,11 +102,3 @@ adipose.weightStage:newStage()
 | `setCurrentWeightStage(stage: number)` | Set weight by stage. I.E if you have 5 stages, passing `5` to the function changes the stage to the fifth.                                                   |
 | `adjustWeightByAmount(amount: number)` | Increase/decrease weight by a certain amount. I.E weight of 500, passing -50 would set the weight to 450.                                                    |
 | `adjustWeightByStage(amount: number)`  | Increase/decrease weight stage by a certain amount. I.E current weight stage is 5, passing -1 would set the weight stage to 4.                               |
-
-### Flags
-
-All of these functions accept booleans as parameters, and will enable/disable different functionalities respectively.
-
-- `setHitboxState(state: boolean)`: enables/disables hitboxes changes
-- `setMotionState(state: boolean)`: enables/disables motion changes
-- `setEyeHeightState(state: boolean)`: enables/disables eye height changes
