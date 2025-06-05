@@ -16,23 +16,28 @@ vanilla_model.ELYTRA:setVisible(false)
 
 adipose.newStage()
 	:setParts(models.stage1)
-	:addScaleOption("pehkui:hitbox_width", 1)
+	:addScaleOption(adipose.pehkui.HITBOX_WIDTH, 1.00)
+	:addScaleOption(adipose.pehkui.MOTION, 1.00)
 
 adipose.newStage()
 	:setParts(models.stage2)
-	:addScaleOption("pehkui:hitbox_width", 1.25)
+	:addScaleOption(adipose.pehkui.HITBOX_WIDTH, 1.25)
+	:addScaleOption(adipose.pehkui.MOTION, 0.95)
 
 adipose.newStage()
 	:setParts(models.stage3)
-	:addScaleOption("pehkui:hitbox_width", 1.75)
+	:addScaleOption(adipose.pehkui.HITBOX_WIDTH, 1.75)
+	:addScaleOption(adipose.pehkui.MOTION, 0.90)
 
 adipose.newStage()
 	:setParts(models.stage4)
-	:addScaleOption("pehkui:hitbox_width", 2.25)
+	:addScaleOption(adipose.pehkui.HITBOX_WIDTH, 2.25)
+	:addScaleOption(adipose.pehkui.MOTION, 0.85)
 
 adipose.newStage()
 	:setParts(models.stage5)
-	:addScaleOption("pehkui:hitbox_width", 2.65)
+	:addScaleOption(adipose.pehkui.HITBOX_WIDTH, 2.65)
+	:addScaleOption(adipose.pehkui.MOTION, 0.80)
 
 function events.entity_init()
 	models.stage1:setPrimaryTexture("SKIN")

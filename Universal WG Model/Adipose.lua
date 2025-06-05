@@ -20,10 +20,17 @@ local timer = adipose.syncTimer
 local oldindex = nil
 
 adipose.pehkui = {
-    ["pehkui:hitbox_width"] = true,
-    ["pehkui:hitbox_height"] = true,
-    ["pehkui:motion"] = true,
-    ["pehkui:eye_height"] = true,
+    HITBOX_WIDTH = "pehkui:hitbox_width",
+    HITBOX_HEIGHT = "pehkui:hitbox_height",
+    MOTION = "pehkui:motion",
+    EYE_HEIGHT = "pehkui:eye_height",
+}
+
+adipose.pehkui.enabled = {
+    [adipose.pehkui.HITBOX_WIDTH] = true,
+    [adipose.pehkui.HITBOX_HEIGHT] = true,
+    [adipose.pehkui.MOTION] = true,
+    [adipose.pehkui.EYE_HEIGHT] = true,
 }
 
 ---@class Adipose.ScaleOption
@@ -118,18 +125,21 @@ end
 
 local function setStageScale(index, granularity)
     local stage = adipose.getStage(index)
+    local indexChanged = (oldindex ~= index)
+    if indexChanged then oldindex = index end
     for scale, value in pairs(stage:getScaleOptions()) do
-        if value.maxWeight then
-            -- Dynamic Scaling
-            setGranularScale(
-                scale, 
-                value.minWeight,
-                value.maxWeight,
-                granularity)
-        elseif oldindex ~= index then
-            oldindex = index
-            -- Static Scaling
-            setScale(scale, value.minWeight)
+        if adipose.pehkui.enabled[scale] then
+            if value.maxWeight then
+                -- Dynamic Scaling
+                setGranularScale(
+                    scale, 
+                    value.minWeight,
+                    value.maxWeight,
+                    granularity)
+            elseif indexChanged then
+                -- Static Scaling
+                setScale(scale, value.minWeight)
+            end
         end
     end
 end
@@ -352,12 +362,12 @@ function adipose.weightStage:setStuffedAnimation(animation)
     return self
 end
 
----@param scale string Name of scaling option, e.g. "pehkui:hitbox_width"
+---@param scale string Name of scaling option, must be one of adipose.pehkui
 ---@param minWeight number Value for static scaling or value at minimum weight of this stage for dynamic scaling.
 ---@param maxWeight? number Optional value at maximum weight of this stage for dynamic scaling.
 ---@return self
 function adipose.weightStage:addScaleOption(scale, minWeight, maxWeight)
-    assert(adipose.pehkui[scale], "Unsupported scaling option")
+    assert(adipose.pehkui.enabled[scale] ~= nil, "Unsupported scaling option")
     self.scaleOptions[scale] = adipose.newScaleOption(minWeight, maxWeight)
     return self
 end
