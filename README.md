@@ -6,7 +6,6 @@ Figura library that adds Weight Gain functionality with animation support.
 - [Functions](#-functions)
   - [Configuration](#configuration)
   - [Setting Weight](#setting-weight)
-  - [Flags](#flags)
 
 ## ⚙️ Features
 - **Staged Based Weight Gain**: designate Weight Stages with different modelparts or even whole models.
@@ -30,22 +29,22 @@ local adipose = require("Adipose")
 3. Create a new stage, and assign the models or model parts you need:
 ```lua
 -- Using Models
-adipose.weightStage:newStage()
+adipose.newStage()
   :setParts(models.modelW0)
 
-adipose.weightStage:newStage()
+adipose.newStage()
   :setParts(models.modelW1)
 ```
 
 ```lua
 -- Using ModelParts in a table
-adipose.weightStage:newStage()
+adipose.newStage()
   :setParts({ 
     models.model.BodyW0,
     models.model.TailW0
   })
 
-adipose.weightStage:newStage()
+adipose.newStage()
   :setParts({
     models.model.BodyW1,
     models.model.TailW1
@@ -61,19 +60,19 @@ You can also set other configuration parameters. Check out the list here: [Confi
 
 ### Configuration
 
-| Configuration                                           | Description                                                                         |
-|---------------------------------------------------------|-------------------------------------------------------------------------------------|
-| `setParts(parts: ModelPart\|[ModelPart])`               | Model or model parts that show when at that specific weight stage.                  |
-| `setGranularAnimation(animation: Animation)`            | Animation used to show how much weight you're gaining before the next weight stage. |
-| `setStuffedAnimation(animation: Animation)`             | Animation used to show how stuffed you are.                                         |
-| `addScaleOption(minWeight: number, maxWeight: number?)` | Add a scaling option used by Pehkui.                                                |
+| Configuration                                                 | Description                                                                         |
+|---------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| `setParts(parts: ModelPart\|[ModelPart])`                     | Model or model parts that show when at that specific weight stage.                  |
+| `setGranularAnimation(animation: Animation)`                  | Animation used to show how much weight you're gaining before the next weight stage. |
+| `setStuffedAnimation(animation: Animation)`                   | Animation used to show how stuffed you are.                                         |
+| `addScaleOption(name, minWeight: number, maxWeight: number?)` | Add a scaling option used by Pehkui. Name must be one of adipose.pehkui.            |
 
 #### Scaling Options
 
 `addScaleOption` supports two modes of operation:
 
-- Static - `addScaleOption(minWeight)` - Scaling option is set to constant `minWeight` value for that weight stage.
-- Dynamic - `addScaleOption(minWeight, maxWeight)` - Scaling option varies from `minWeight` value to `maxWeight` value for that stage.
+- Static - `addScaleOption(name, minWeight)` - Scaling option is set to constant `minWeight` value for that weight stage.
+- Dynamic - `addScaleOption(name, minWeight, maxWeight)` - Scaling option varies from `minWeight` value to `maxWeight` value for that stage.
 
 `addScaleOption` supports the following scaling options by default:
 
@@ -82,16 +81,17 @@ You can also set other configuration parameters. Check out the list here: [Confi
 - `pehkui:hitbox_width`
 - `pehkui:motion`
 
-Scaling options can be toggled globally by setting the corresponding key in `adipose.pehkui`.
+Scaling options can be toggled globally by setting the corresponding key in `adipose.pehkui.enabled`.
 
 ```lua
-adipose.pehkui["pehkui:hitbox_width"] = false
+adipose.pehkui.enabled[adipose.pehkui.HITBOX_WIDTH] = false
 ```
 
-Additional scaling options can be supported by adding keys to `adipose.pehkui`.
+Additional scaling options can be supported by adding keys to `adipose.pehkui` and `adipose.pehkui.enabled`.
 
 ```lua
-adipose.pehkui["pehkui:step_height"] = true
+adipose.pehkui.STEP_HEIGHT = "pehkui:step_height"
+adipose.pehkui.enabled[adipose.pehkui.STEP_HEIGHT] = true
 ```
 
 #### Full example
@@ -101,11 +101,15 @@ local adipose = require('Adipose')
 
 adipose.weightStage:newStage()
       :setParts(models.modelW0)
-      :addScaleOption("pehkui:eye_height", 1.2) -- Static
-      :addScaleOption("pehkui:hitbox_height", 1.1) -- Static
-      :addScaleOption("pehkui:hitbox_width", 1, 2) -- Dynamic
-      :addScaleOption("pehkui:motion", 1, 0.8) -- Dynamic
+      :addScaleOption(adipose.pehkui.EYE_HEIGHT, 1.2) -- Static
+      :addScaleOption(adipose.pehkui.HITBOX_HEIGHT, 1.1) -- Static
+      :addScaleOption(adipose.pehkui.HITBOX_WIDTH, 1, 2) -- Dynamic
+      :addScaleOption(adipose.pehkui.MOTION, 1, 0.8) -- Dynamic
 ```
+
+#### Startup Message
+
+To disable the startup message, set `adipose.verbose` to `false`.
 
 ### Setting Weight
 
