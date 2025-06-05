@@ -125,6 +125,8 @@ end
 
 local function setStageScale(index, granularity)
     local stage = adipose.getStage(index)
+    local indexChanged = (oldindex ~= index)
+    if indexChanged then oldindex = index end
     for scale, value in pairs(stage:getScaleOptions()) do
         if adipose.pehkui.enabled[scale] then
             if value.maxWeight then
@@ -134,8 +136,7 @@ local function setStageScale(index, granularity)
                     value.minWeight,
                     value.maxWeight,
                     granularity)
-            elseif oldindex ~= index then
-                oldindex = index
+            elseif indexChanged then
                 -- Static Scaling
                 setScale(scale, value.minWeight)
             end
