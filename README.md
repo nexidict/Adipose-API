@@ -75,14 +75,27 @@ You can also set other configuration parameters. Check out the list here: [Confi
 - Static - `addScaleOption(minWeight)` - Scaling option is set to constant `minWeight` value for that weight stage.
 - Dynamic - `addScaleOption(minWeight, maxWeight)` - Scaling option varies from `minWeight` value to `maxWeight` value for that stage.
 
-`addScaleOption` supports the following scaling options:
+`addScaleOption` supports the following scaling options by default:
 
 - `pehkui:eye_height`
 - `pehkui:hitbox_height`
 - `pehkui:hitbox_width`
 - `pehkui:motion`
 
+Scaling options can be toggled globally by setting the corresponding key in `adipose.pehkui`.
+
+```lua
+adipose.pehkui["pehkui:hitbox_width"] = false
+```
+
+Additional scaling options can be supported by adding keys to `adipose.pehkui`.
+
+```lua
+adipose.pehkui["pehkui:step_height"] = true
+```
+
 #### Full example
+
 ```lua
 local adipose = require('Adipose')
 
