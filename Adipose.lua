@@ -74,22 +74,6 @@ local function calculateProgressFromWeight(weight)
 	return index, granularity
 end
 
-local function setScale(scale, value)
-    if not player:isLoaded() or not adipose.pehkuiCheck or not adipose.scaling then return end
-	
-	if adipose.opCheck then 
-		host:sendChatCommand('scale set '..scale..' '..value..' @s')
-	elseif adipose.osCheck then
-		local prefixIndex = string.find(scale, ":")
-		scale = string.sub(scale, prefixIndex+1,-1) --this command is ass, returns scale without a prefix because abyssal didnt take my suggestion
-		host:sendChatCommand('overstuffed setScale '..scale..' '..value)
-	elseif adipose.p4aCheck then 
-		local prefixIndex = string.find(scale, ":")
-		scale = string.sub(scale, prefixIndex+1,-1) --this command is also ass, returns scale without a prefix because god's light doesnt shine here
-		host:sendChatCommand('lesserscale set '..value..' '..scale)
-	end
-end
-
 -- MODEL FUNCTIONS
 local function setModelPartsVisibility(index)
     local visibleParts = {}
@@ -195,17 +179,15 @@ function events.entity_init()
 	end
 	--IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! /\
 
-    setScale(adipose.pehkui.HITBOX_WIDTH, adipose.weightStages[1].hitboxWidth)
-    setScale(adipose.pehkui.HITBOX_HEIGHT, adipose.weightStages[1].hitboxHeight)
-    setScale(adipose.pehkui.MOTION, adipose.weightStages[1].motion)
-    setScale(adipose.pehkui.EYE_HEIGHT, adipose.weightStages[1].eyeHeight)
+    adipose.setScale(adipose.pehkui.HITBOX_WIDTH, adipose.weightStages[1].hitboxWidth)
+    adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, adipose.weightStages[1].hitboxHeight)
+    adipose.setScale(adipose.pehkui.MOTION, adipose.weightStages[1].motion)
+    adipose.setScale(adipose.pehkui.EYE_HEIGHT, adipose.weightStages[1].eyeHeight)
 	
 	adipose.setWeight(adipose.currentWeight)	
 end
 
 -- WEIGHT MANAGEMENT
----Sets weight by amount. From adipose.minWeight (100) to adipose.maxWeight (1000).
----@param amount number
 function adipose.setWeight(amount)
     amount = math.clamp(amount, adipose.minWeight, adipose.maxWeight)
 		
@@ -219,14 +201,14 @@ function adipose.setWeight(amount)
 	if oldindex ~= index then
 		oldindex = index
 		local stage = adipose.weightStages[index]
-		setScale(adipose.pehkui.HITBOX_WIDTH, stage.hitboxWidth)
-		setScale(adipose.pehkui.HITBOX_HEIGHT, stage.hitboxHeight)
-		setScale(adipose.pehkui.MOTION, stage.motion)
-		setScale(adipose.pehkui.EYE_HEIGHT, stage.eyeHeight)
+		adipose.setScale(adipose.pehkui.HITBOX_WIDTH, stage.hitboxWidth)
+		adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, stage.hitboxHeight)
+		adipose.setScale(adipose.pehkui.MOTION, stage.motion)
+		adipose.setScale(adipose.pehkui.EYE_HEIGHT, stage.eyeHeight)
+    
+        pings.setModelPartsVisibility(index)
     end
 	
-	pings.setModelPartsVisibility(index)
-  
 	local stuffed = 0
 	if not adipose.osCheck then
 		stuffed = player:getSaturation()/20
@@ -245,7 +227,6 @@ function adipose.setWeight(amount)
     end
 end
 
----@param stage number
 function adipose.setCurrentWeightStage(stage)
     stage = math.clamp(math.floor(stage), 1, #adipose.weightStages+1)
     adipose.setWeight(calculateWeightFromIndex(stage))
@@ -347,6 +328,23 @@ function adipose.weightStage:setMotion(motion)
     return self
 end
 
+-- PEHKUI METHODS
+function adipose.setScale(scale, value)
+    if not player:isLoaded() or not adipose.pehkuiCheck or not adipose.scaling then return end
+	
+	if adipose.opCheck then 
+		host:sendChatCommand('scale set '..scale..' '..value..' @s')
+	elseif adipose.osCheck then
+		local prefixIndex = string.find(scale, ":")
+		scale = string.sub(scale, prefixIndex+1,-1) --this command is ass, returns scale without a prefix because abyssal didnt take my suggestion
+		host:sendChatCommand('overstuffed setScale '..scale..' '..value)
+	elseif adipose.p4aCheck then 
+		local prefixIndex = string.find(scale, ":")
+		scale = string.sub(scale, prefixIndex+1,-1) --this command is also ass, returns scale without a prefix because god's light doesnt shine here
+		host:sendChatCommand('lesserscale set '..value..' '..scale)
+	end
+end
+
 -- FLAGS METHODS
 ---@param state boolean
 function adipose.setHitboxState(state)
@@ -356,13 +354,13 @@ function adipose.setHitboxState(state)
         adipose.hitbox = state
 
         if state == true then
-            setScale(adipose.pehkui.HITBOX_WIDTH, adipose.weightStages[adipose.currentWeightStage].hitboxWidth)
-            setScale(adipose.pehkui.HITBOX_HEIGHT, adipose.weightStages[adipose.currentWeightStage].hitboxHeight)
+            adipose.setScale(adipose.pehkui.HITBOX_WIDTH, adipose.weightStages[adipose.currentWeightStage].hitboxWidth)
+            adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, adipose.weightStages[adipose.currentWeightStage].hitboxHeight)
             return
         end
 
-        setScale(adipose.pehkui.HITBOX_WIDTH, 1)
-        setScale(adipose.pehkui.HITBOX_HEIGHT, 1)
+        adipose.setScale(adipose.pehkui.HITBOX_WIDTH, 1)
+        adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, 1)
         return
     end
 end
@@ -375,11 +373,11 @@ function adipose.setMotionState(state)
         adipose.motion = state
 
         if state == true then
-            setScale(adipose.pehkui.MOTION, adipose.weightStages[adipose.currentWeightStage].motion)
+            adipose.setScale(adipose.pehkui.MOTION, adipose.weightStages[adipose.currentWeightStage].motion)
             return
         end
 
-        setScale(adipose.pehkui.MOTION, 1)
+        adipose.setScale(adipose.pehkui.MOTION, 1)
         return
     end
 end
@@ -392,11 +390,11 @@ function adipose.setEyeHeightState(state)
         adipose.eyeHeight = state
 
         if state == true then
-            setScale(adipose.pehkui.EYE_HEIGHT, adipose.weightStages[adipose.currentWeightStage].eyeHeight)
+            adipose.setScale(adipose.pehkui.EYE_HEIGHT, adipose.weightStages[adipose.currentWeightStage].eyeHeight)
             return
         end
 
-        setScale(adipose.pehkui.EYE_HEIGHT, 1)
+        adipose.setScale(adipose.pehkui.EYE_HEIGHT, 1)
         return
     end
 end
