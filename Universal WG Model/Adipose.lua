@@ -17,12 +17,10 @@ adipose.pehkui = {
     EYE_HEIGHT =    'pehkui:eye_height',
 }
 
-
-
 -- VARIABLES
 adipose.currentWeight = config:load("adipose.currentWeight") or adipose.minWeight
 adipose.granularWeight = 0
-adipose.currentWeightStage = 1
+adipose.currentWeightStage = config:load("adipose.currentWeightStage") or 1
 
 adipose.syncTimer = 20
 local timer = adipose.syncTimer
@@ -30,17 +28,14 @@ local oldindex = nil
 
 adipose.scaling = true
 
-
 -- FLAGS
 adipose.hitbox = true
 adipose.motion = true
 adipose.eyeHeight = true
 
 -- FUNCTIONS
-
-
 local function checkFood()
-	--only runs if OS isnt installed
+	-- only runs if OverStuffed isnt installed
     local deltaWeight = 0
 
     if player:getSaturation() > 2 then
@@ -66,8 +61,6 @@ local function calculateWeightFromIndex(index)
 end
 
 local function calculateProgressFromWeight(weight)
-
-
 	local normalized = (weight - adipose.minWeight) / (adipose.maxWeight - adipose.minWeight)
     local exactWeightStage = normalized * #adipose.weightStages + 1
 
@@ -118,7 +111,7 @@ local function setStuffed(index, stuffed)
     local offset = animation:getLength() * stuffed
     animation:setOffset(offset)
 end
-
+pings.setStuffed = setStuffed
 
 -- EVENTS
 function events.tick()
@@ -143,8 +136,6 @@ function events.tick()
 end
 
 function events.entity_init()
-    
-	
 	if #adipose.weightStages == 0 then return end
 	
 	adipose.osCheck = client:isModLoaded("overstuffed")
@@ -198,7 +189,6 @@ end
 
 -- WEIGHT MANAGEMENT
 function adipose.setWeight(amount)
-	
     amount = math.clamp(amount, adipose.minWeight, adipose.maxWeight)
 		
     local index, granularity = calculateProgressFromWeight(amount)
@@ -215,11 +205,9 @@ function adipose.setWeight(amount)
 		adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, stage.hitboxHeight)
 		adipose.setScale(adipose.pehkui.MOTION, stage.motion)
 		adipose.setScale(adipose.pehkui.EYE_HEIGHT, stage.eyeHeight)
-	
-		pings.setModelPartsVisibility(index)
+    
+        pings.setModelPartsVisibility(index)
     end
-	
-    pings.setGranularity(index, granularity)
 	
 	local stuffed = 0
 	if not adipose.osCheck then
@@ -228,11 +216,15 @@ function adipose.setWeight(amount)
 		stuffed = player:getNbt()["ForgeCaps"]["overstuffed:properties"]["stuffedbar"]/9
 	end
 	
-	setStuffed(index, stuffed)
+	pings.setGranularity(index, granularity)
+	pings.setStuffed(index, stuffed)
 	
 	--print(index , granularity)
 
-    if not adipose.osCheck and host:isHost() then config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)end
+    if not adipose.osCheck and host:isHost() then 
+        config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)
+        config:save("adipose.currentWeightStage", adipose.currentWeightStage)
+    end
 end
 
 function adipose.setCurrentWeightStage(stage)
@@ -406,6 +398,5 @@ function adipose.setEyeHeightState(state)
         return
     end
 end
- 
  
 return adipose
