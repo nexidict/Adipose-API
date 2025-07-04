@@ -1,9 +1,6 @@
 ---@class Adipose
 local adipose = {}
 
--- CONFIG
-config:setName("Adipose.Config")
-
 -- CONSTANTS
 adipose.minWeight = 100
 adipose.maxWeight = 1000
@@ -74,6 +71,22 @@ local function calculateProgressFromWeight(weight)
 	return index, granularity
 end
 
+function adipose.setScale(scale, value)
+    if not player:isLoaded() or not adipose.pehkuiCheck or not adipose.scaling then return end
+	
+	if adipose.opCheck then 
+		host:sendChatCommand('scale set '..scale..' '..value..' @s')
+	elseif adipose.p4aCheck then 
+		local prefixIndex = string.find(scale, ":")
+		scale = string.sub(scale, prefixIndex+1,-1) --this command is also ass, returns scale without a prefix because god's light doesnt shine here
+		host:sendChatCommand('lesserscale set '..value..' '..scale)		
+	elseif adipose.ggCheck then
+		local prefixIndex = string.find(scale, ":")
+		scale = string.sub(scale, prefixIndex+1,-1) --this command is ass, returns scale without a prefix because abyssal didnt take my suggestion
+		host:sendChatCommand('ggconfig adipose.setScale '..scale..' '..value)
+	end
+end
+
 -- MODEL FUNCTIONS
 local function setModelPartsVisibility(index)
     local visibleParts = {}
@@ -101,35 +114,39 @@ local function setGranularity(index, granularity)
 end
 pings.setGranularity=setGranularity
 
+local stuffedOverride = nil
 local function setStuffed(index, stuffed)
     local animation = adipose.weightStages[index].stuffedAnim
-    if animation == '' then return end	
-	
+    if animation == '' then return end    
+    if stuffedOverride then stuffed = stuffedOverride end    
+    
     animation:play()
     animation:setSpeed(0)
-	
+    
     local offset = animation:getLength() * stuffed
     animation:setOffset(offset)
 end
 pings.setStuffed = setStuffed
+
+function adipose.setStuffedOverride(stuffed)
+    stuffedOverride = stuffed
+end
 
 -- EVENTS
 function events.tick()
     if timer < 0 then 
         timer = adipose.syncTimer
         
-		if not adipose.osCheck then --Update the weight value
+		if not adipose.ggCheck then --Update the weight value
 			local deltaWeight = checkFood() --All things that affect weight 
 			adipose.currentWeight = adipose.currentWeight + deltaWeight 
 		else
-			adipose.currentWeight = player:getNbt()["ForgeCaps"]["overstuffed:weightbar"]["currentweight"] --ignore everything and just sync with overstuffed 
+			adipose.currentWeight = player:getNbt()["ForgeCaps"]["gluttonousgrowth:weightbar"]["currentweight"] --ignore everything and just sync with overstuffed 
 		end
-		
 		
 		local packet = math.floor(adipose.currentWeight*10)/10
 		--print(packet)
 		adipose.setWeight(packet) -- set weight to current value
-		
     else 
 		timer = timer - 1
 	end
@@ -138,14 +155,14 @@ end
 function events.entity_init()
 	if #adipose.weightStages == 0 then return end
 	
-	adipose.osCheck = client:isModLoaded("overstuffed")
+	adipose.ggCheck = client:isModLoaded("gluttonousgrowth")
 	
-	if adipose.osCheck then 
-		local OSWeightBar = player:getNbt()["ForgeCaps"]["overstuffed:weightbar"]
+	if adipose.ggCheck then 
+		local GGWeightBar = player:getNbt()["ForgeCaps"]["gluttonousgrowth:weightbar"]
 		
-		adipose.maxWeight = OSWeightBar["maxweight"]
-		adipose.minWeight = OSWeightBar["minweight"]
-		adipose.currentWeight = OSWeightBar["currentweight"]
+		adipose.maxWeight = GGWeightBar["maxweight"]
+		adipose.minWeight = GGWeightBar["minweight"]
+		adipose.currentWeight = GGWeightBar["currentweight"]
 		
 		--print(adipose.maxWeight)
 		--print(adipose.minWeight)
@@ -163,10 +180,10 @@ function events.entity_init()
 		if adipose.pehkuiCheck then
 			if adipose.opCheck then
 				print("OP Detected, Using /scale for Scaling")
-			elseif adipose.osCheck then
-				print("Overstuffed Detected, Using /overstuffed setScale for Scaling")
 			elseif adipose.p4aCheck then
 				print("Pehkui 4 All Detected, Using /lesserscale for Scaling")
+			elseif adipose.ggCheck then
+				print("Gluttonous Growth Detected, Using /ggconfig setScale for Scaling")
 			else
 				print("Insufficient Permissions for Scaling, Scaling Disabled")
 			end	
@@ -188,6 +205,8 @@ function events.entity_init()
 end
 
 -- WEIGHT MANAGEMENT
+---Sets weight by amount. From adipose.minWeight (100) to adipose.maxWeight (1000).
+---@param amount number
 function adipose.setWeight(amount)
     amount = math.clamp(amount, adipose.minWeight, adipose.maxWeight)
 		
@@ -205,15 +224,15 @@ function adipose.setWeight(amount)
 		adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, stage.hitboxHeight)
 		adipose.setScale(adipose.pehkui.MOTION, stage.motion)
 		adipose.setScale(adipose.pehkui.EYE_HEIGHT, stage.eyeHeight)
-    
-        pings.setModelPartsVisibility(index)
     end
 	
+	pings.setModelPartsVisibility(index)
+  
 	local stuffed = 0
-	if not adipose.osCheck then
+	if not adipose.ggCheck then
 		stuffed = player:getSaturation()/20
 	else
-		stuffed = player:getNbt()["ForgeCaps"]["overstuffed:properties"]["stuffedbar"]/9
+		stuffed = player:getNbt()["ForgeCaps"]["gluttonousgrowth:calmeter"]["curcalories"]/player:getNbt()["ForgeCaps"]["gluttonousgrowth:calmeter"]["maxcalories"]
 	end
 	
 	pings.setGranularity(index, granularity)
@@ -221,12 +240,13 @@ function adipose.setWeight(amount)
 	
 	--print(index , granularity)
 
-    if not adipose.osCheck and host:isHost() then 
+    if not adipose.ggCheck and host:isHost() then 
         config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)
         config:save("adipose.currentWeightStage", adipose.currentWeightStage)
     end
 end
 
+---@param stage number
 function adipose.setCurrentWeightStage(stage)
     stage = math.clamp(math.floor(stage), 1, #adipose.weightStages+1)
     adipose.setWeight(calculateWeightFromIndex(stage))
@@ -326,23 +346,6 @@ end
 function adipose.weightStage:setMotion(motion)
     self.motion = motion
     return self
-end
-
--- PEHKUI METHODS
-function adipose.setScale(scale, value)
-    if not player:isLoaded() or not adipose.pehkuiCheck or not adipose.scaling then return end
-	
-	if adipose.opCheck then 
-		host:sendChatCommand('scale set '..scale..' '..value..' @s')
-	elseif adipose.osCheck then
-		local prefixIndex = string.find(scale, ":")
-		scale = string.sub(scale, prefixIndex+1,-1) --this command is ass, returns scale without a prefix because abyssal didnt take my suggestion
-		host:sendChatCommand('overstuffed setScale '..scale..' '..value)
-	elseif adipose.p4aCheck then 
-		local prefixIndex = string.find(scale, ":")
-		scale = string.sub(scale, prefixIndex+1,-1) --this command is also ass, returns scale without a prefix because god's light doesnt shine here
-		host:sendChatCommand('lesserscale set '..value..' '..scale)
-	end
 end
 
 -- FLAGS METHODS
