@@ -115,7 +115,6 @@ end
 pings.setGranularity=setGranularity
 
 local stuffedOverride = nil
-
 local function setStuffed(index, stuffed)
     local animation = adipose.weightStages[index].stuffedAnim
     if animation == '' then return end    
@@ -133,8 +132,6 @@ function adipose.setStuffedOverride(stuffed)
     stuffedOverride = stuffed
 end
 
-
-
 -- EVENTS
 function events.tick()
     if timer < 0 then 
@@ -147,11 +144,9 @@ function events.tick()
 			adipose.currentWeight = player:getNbt()["ForgeCaps"]["gluttonousgrowth:weightbar"]["currentweight"] --ignore everything and just sync with overstuffed 
 		end
 		
-		
 		local packet = math.floor(adipose.currentWeight*10)/10
 		--print(packet)
 		adipose.setWeight(packet) -- set weight to current value
-		
     else 
 		timer = timer - 1
 	end
