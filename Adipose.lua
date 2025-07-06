@@ -310,7 +310,7 @@ function adipose.weightStage:setGranularAnimation(animation)
     return self
 end
 
----@param animation animations
+---@param animation Animation
 ---@return self
 function adipose.weightStage:setStuffedAnimation(animation)
     self.stuffedAnim = animation
