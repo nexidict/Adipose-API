@@ -20,6 +20,9 @@ Figura library that adds Weight Gain functionality with animation support.
 
 > **Note: Pehkui, Pehkui4All or Overstuffed are optional**. Adipose will check for their presence, and if they are not installed, it will skip Pehkui related commands. The library will still change weight and update the model without them.
 
+**⚠ ENSURE Figura's "Chat Messages" setting is set to _ON_ for scaling to occur ⚠**
+![Figura Chat Messages Setting](https://github.com/user-attachments/assets/210014bc-9efc-40c7-908d-6aba5c42277c)
+
 ## 🛠️ Installation
 
 1. Download the file [`Adipose.lua`](https://github.com/Tyrus5255/Adipose-API/blob/15b73dac8e77e5a7117cf1bcc6e2034bfa7e36e1/Adipose.lua) and drop it into your Figura avatar project.
