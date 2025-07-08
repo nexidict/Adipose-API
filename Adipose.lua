@@ -232,7 +232,8 @@ function adipose.setWeight(amount)
 	if not adipose.ggCheck then
 		stuffed = player:getSaturation()/20
 	else
-		stuffed = player:getNbt()["ForgeCaps"]["gluttonousgrowth:calmeter"]["curcalories"]/player:getNbt()["ForgeCaps"]["gluttonousgrowth:calmeter"]["maxcalories"]
+		local curCalories = player:getNbt()["ForgeCaps"]["gluttonousgrowth:calmeter"]["curcalories"] or 0
+		stuffed = curCalories/player:getNbt()["ForgeCaps"]["gluttonousgrowth:calmeter"]["maxcalories"]
 	end
 	
 	pings.setGranularity(index, granularity)
