@@ -1,18 +1,38 @@
 # 🍔 Adipose API 
+
 Figura library that adds Weight Gain functionality with animation support.
+
+**Table of Contents**
 
 - [Features](#️-features)
 - [Installation](#️-installation)
 - [Functions](#-functions)
-  - [Configuration](#configuration)
-  - [Setting Weight](#setting-weight)
+  - [Adipose API](#adipose-api)
+    - [Require](#require)
+  - [Weight Management](#weight-management)
+    - [Set Weight](#setweight)
+    - [Set Current Weight Stage](#setcurrentweightstage)
+    - [Adjust Weight By Amount](#adjustweightbyamount)
+    - [Adjust Weight By Stage](#adjustweightbystage)
+  - [Weight Stage](#weight-stage)
+    - [Set Parts](#setparts)
+    - [Set Granular Animation](#setgranularanimation)
+    - [Set Stuffed Animation](#setstuffedanimation)
+    - [Set Eye Height](#seteyeheight)
+    - [Set Hitbox Width](#sethitboxwidth)
+    - [Set Hitbox Height](#sethitboxheight)
+    - [Set Motion](#setmotion)
   - [Flags](#flags)
+    - [Set Hitbox State](#sethitboxstate)
+    - [Set Motion State](#setmotionstate)
+    - [Set Eye Height State](#seteyeheightstate)
 
 ## ⚙️ Features
+
 - **Staged Based Weight Gain**: designate Weight Stages with different modelparts or even whole models.
 - **Granular Weight Gain**: use an animation to smooth out the transition between stages.
 - **Stuffed Animation**: use an animation to reflect stomach fullness.
-- **Weight Saving via Config**: your weight wont reset on a model reload.
+- **Weight Saving via Config**: your weight won't reset on a model reload.
 - **Pehkui Compatibility**: When designating a stage you can set certain Pehkui scales for each stage.
   - Automatically picks commands based on permissions.
   - If Pehkui4All is installed, lesserscale will be used if scale isnt available (**Ensure relevant scales are enabled in P4A config)**.
@@ -26,81 +46,361 @@ Figura library that adds Weight Gain functionality with animation support.
 ## 🛠️ Installation
 
 1. Download the file [`Adipose.lua`](https://github.com/Tyrus5255/Adipose-API/blob/15b73dac8e77e5a7117cf1bcc6e2034bfa7e36e1/Adipose.lua) and drop it into your Figura avatar project.
-2. Import the library as follows: 
-```lua
-local adipose = require("Adipose")
-```
-3. Create a new stage, and assign the model from `Models` or `ModelPart`s you need:
-```lua
--- Using Models
-adipose.weightStage:newStage()
-  :setParts({ models.modelW0 })
 
-adipose.weightStage:newStage()
-  :setParts({ models.modelW1 })
-```
+2. Import the library:
 
-```lua
--- Using ModelParts
-adipose.weightStage:newStage()
-  :setParts({ 
-    models.model.BodyW0,
-    models.model.TailW0
-  })
+    ```lua
+    local adipose = require('Adipose')
+    ```
 
-adipose.weightStage:newStage()
-  :setParts({
-    models.model.BodyW1,
-    models.model.TailW1
-  })
-```
+3. Create and configure stages:
 
-You can also set other configuration parameters. Check out the list here: [Configuration](#-stage-configuration)
+    ```lua
+    adipose.weightStage:newStage()
+          :setParts(models.modelW0)
+          :setEyeHeight(1)
+          :setHitboxWidth(1)
+          :setHitboxHeight(1)
+          :setMotion(1)
+
+    adipose.weightStage:newStage()
+          :setParts(models.modelW1)
+          :setEyeHeight(1)
+          :setHitboxWidth(2)
+          :setHitboxHeight(1)
+          :setMotion(0.5)
+
+    adipose.weightStage:newStage()
+          :setParts(models.modelW2)
+          :setEyeHeight(2)
+          :setHitboxWidth(3)
+          :setHitboxHeight(2)
+          :setMotion(0.1)
+    ```
 
 4. Save your script.
+
 5. Done!
 
 ## 📃 Functions
 
-### Configuration
+### Adipose API
 
-| Configuration                                 | Description                                                                         |
-|-----------------------------------------------|-------------------------------------------------------------------------------------|
-| `setParts(parts: table<Models\|ModelPart>)`   | Parts of the model/model that shows when at that specific weight stage.             |
-| `setGranularAnimation(animation: animations)` | Animation used to show how much weight you're gaining before the next weight stage. |
-| `setStuffedAnimation(animation: animations)`  | Animation used to show how stuffed you are.                                         |
-| `setEyeHeight(offset: number)`                | This is the value used by Pehkui (and relatives) to set `pehkui:eye_height`.        |
-| `setHitboxWidth(width: number)`               | This is the value used by Pehkui (and relatives) to set `pehkui:hitbox_width`.      |
-| `setHitboxHeight(height: number)`             | This is the value used by Pehkui (and relatives) to set `pehkui:hitbox_height`.     |
-| `setMotion(motion: number)`                   | This is the value used by Pehkui (and relatives) to set `pehkui:motion`.            |
+#### Require
 
-#### Full example
+Import the Adipose API for use in a script.
+
+**Example:**
+
 ```lua
 local adipose = require('Adipose')
 ```
 
+### Weight Management
+
+#### `setWeight()`
+
+Sets the current weight value.
+
+Weight is limited from `adipose.minWeight` (default 100) to `adipose.maxWeight` (default 1000).
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+amount | `Number` | Current weight value to set
+
+**Example:**
+
 ```lua
-adipose.weightStage:newStage()
-      :setParts({ models.modelW0 })
-      :setHitboxWidth(1.1)
-      :setHitboxHeight(1.1)
-      :setMotion(1.2)
-      :setEyeHeight(1)
+adipose.setWeight(adipose.minWeight)
 ```
 
-### Setting Weight
+#### `setCurrentWeightStage()`
 
-| Function                               | Description                                                                                                                                                  |
-|----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `setWeight(amount: number)`            | Set weight by value. To determine your current weight, Adipose uses a range from 100 to 1000. (specifically from `Adipose.minWeight` to `Adipose.maxWeight`) |
-| `setCurrentWeightStage(stage: number)` | Set weight by stage. I.E if you have 5 stages, passing `5` to the function changes the stage to the fifth.                                                   |
-| `adjustWeightByAmount(amount: number)` | Increase/decrease weight by a certain amount. I.E weight of 500, passing -50 would set the weight to 450.                                                    |
-| `adjustWeightByStage(amount: number)`  | Increase/decrease weight stage by a certain amount. I.E current weight stage is 5, passing -1 would set the weight stage to 4.                               |
+Sets the current weight stage, where 1 is the first stage.
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+stage | `Number` | Current weight stage to set
+
+**Example:**
+
+```lua
+adipose.setCurrentWeightStage(1)
+```
+
+#### `adjustWeightByAmount()`
+
+Adjusts the current weight value.
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+amount | `Number` | Weight value
+
+**Example:**
+
+```lua
+adipose.adjustWeightByAmount(100)
+```
+
+#### `adjustWeightByStage()`
+
+Adjusts the current weight stage.
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+stage | `Number` | Weight stage
+
+**Example:**
+
+```lua
+adipose.adjustWeightByStage(1)
+```
+
+#### `adipose.weightStage:newStage()`
+
+Creates a new stage.
+
+**Returns:**
+
+Type | Description
+---  | ---
+`Adipose.WeightStage` | Returns self for chaining
+
+**Example:**
+
+```lua
+local stage = adipose.weightStage:newStage()
+```
+
+### Weight Stage
+
+#### `setParts()`
+
+Sets the model or model parts to show at this stage.
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+parts | `ModelPart\|[ModelPart]` | Model or table of model parts
+
+**Returns:**
+
+Type | Description
+---  | ---
+`Adipose.WeightStage` | Returns self for chaining
+
+**Example:**
+
+```lua
+-- Using whole models
+stage:setParts(models.modelW0)
+```
+
+**Example:**
+
+```lua
+-- Using table of model parts
+stage:setParts(
+  { 
+    models.model.BodyW0,
+    models.model.TailW0
+  }
+)
+```
+
+#### `setGranularAnimation()`
+
+Set the animation used to show weight gain between stages.
+
+The animation's loop mode must be set to "Hold on Last Frame" in Blockbench.
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+animation | `Animation` | Animation with loop mode set to HOLD
+
+**Returns:**
+
+Type | Description
+---  | ---
+`Adipose.WeightStage` | Returns self for chaining
+
+**Example:**
+
+```lua
+stage:setGranularAnimation(animations.model.weight)
+```
+
+#### `setStuffedAnimation()`
+
+Set the animation used to show the stuffed level.
+
+The animation's loop mode must be set to "Hold on Last Frame" in Blockbench.
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+animation | `Animation` | Animation with loop mode set to HOLD
+
+**Returns:**
+
+Type | Description
+---  | ---
+`Adipose.WeightStage` | Returns self for chaining
+
+**Example:**
+
+```lua
+stage:setStuffedAnimation(animations.model.stuffed)
+```
+
+#### `setEyeHeight()`
+
+Set the eye height at this stage.
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+offset | `Number` | Value of `pehkui:eye_height` to set when this stage is entered.
+
+**Returns:**
+
+Type | Description
+---  | ---
+`Adipose.WeightStage` | Returns self for chaining
+
+**Example:**
+
+```lua
+stage:setEyeHeight(1)
+```
+
+#### `setHitboxWidth()`
+
+Set the hitbox width at this stage.
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+width | `Number` | Value of `pehkui:hitbox_width` to set when this stage is entered.
+
+**Returns:**
+
+Type | Description
+---  | ---
+`Adipose.WeightStage` | Returns self for chaining
+
+**Example:**
+
+```lua
+stage:setHitboxWidth(1)
+```
+
+#### `setHitboxHeight()`
+
+Set the hitbox height at this stage.
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+height | `Number` | Value of `pehkui:hitbox_height` to set when this stage is entered.
+
+**Returns:**
+
+Type | Description
+---  | ---
+`Adipose.WeightStage` | Returns self for chaining
+
+**Example:**
+
+```lua
+stage:setHitboxHeight(1)
+```
+
+#### `setMotion()`
+
+Set the motion at this stage.
+
+This parameter primarily affects movement speed but also affects step and jump height.
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+motion | `Number` | Value of `pehkui:motion` to set when this stage is entered.
+
+**Returns:**
+
+Type | Description
+---  | ---
+`Adipose.WeightStage` | Returns self for chaining
+
+**Example:**
+
+```lua
+stage:setMotion(1)
+```
 
 ### Flags
 
-All of these functions accept booleans as parameters, and will enable/disable different functionalities respectively.
+#### `setHitboxState()`
 
-- `setHitboxState(state: boolean)`: enables/disables hitboxes changes
-- `setMotionState(state: boolean)`: enables/disables motion changes
-- `setEyeHeightState(state: boolean)`: enables/disables eye height changes
+Enable or disable commands to set `pehkui:hitbox_height` and `pehkui:hitbox_width` by Adipose.
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+state | `Boolean` | Enable (`true`) or disable (`false`)
+
+**Example:**
+
+```lua
+adipose.setHitboxState(false)
+```
+
+#### `setMotionState()`
+
+Enable or disable commands to set `pehkui:motion` by Adipose.
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+state | `Boolean` | Enable (`true`) or disable (`false`)
+
+**Example:**
+
+```lua
+adipose.setMotionState(false)
+```
+
+#### `setEyeHeightState()`
+
+Enable or disable commands to set `pehkui:eye_height` by Adipose.
+
+**Parameters:**
+
+Name | Type | Description
+---  | ---  | ---
+state | `Boolean` | Enable (`true`) or disable (`false`)
+
+**Example:**
+
+```lua
+adipose.setEyeHeightState(false)
+```
