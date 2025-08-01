@@ -7,13 +7,6 @@ adipose.maxWeight = 1000
 
 adipose.weightRate = 0.01
 
-adipose.pehkui = {
-    HITBOX_WIDTH =  'pehkui:hitbox_width',
-    HITBOX_HEIGHT = 'pehkui:hitbox_height',
-    MOTION =        'pehkui:motion',
-    EYE_HEIGHT =    'pehkui:eye_height',
-}
-
 -- VARIABLES
 adipose.currentWeight = config:load("adipose.currentWeight") or adipose.minWeight
 adipose.granularWeight = 0
@@ -22,15 +15,17 @@ adipose.currentWeightStage = config:load("adipose.currentWeightStage") or 1
 adipose.syncTimer = 20
 local timer = adipose.syncTimer
 local oldindex = nil
+local isDead = false
 
 adipose.scaling = true
 
--- FLAGS
-adipose.hitbox = true
-adipose.motion = true
-adipose.eyeHeight = true
-
 -- FUNCTIONS
+adipose.onWeightChange = function(_, _) end
+
+function adipose.setOnWeightChange(callback)
+    adipose.onWeightChange = callback
+end
+
 local function checkFood()
 	-- only runs if OverStuffed isnt installed
     local deltaWeight = 0
@@ -71,22 +66,6 @@ local function calculateProgressFromWeight(weight)
 	return index, granularity
 end
 
-function adipose.setScale(scale, value)
-    if not player:isLoaded() or not adipose.pehkuiCheck or not adipose.scaling then return end
-	
-	if adipose.opCheck then 
-		host:sendChatCommand('scale set '..scale..' '..value..' @s')
-	elseif adipose.p4aCheck then 
-		local prefixIndex = string.find(scale, ":")
-		scale = string.sub(scale, prefixIndex+1,-1) --this command is also ass, returns scale without a prefix because god's light doesnt shine here
-		host:sendChatCommand('lesserscale set '..value..' '..scale)		
-	elseif adipose.ggCheck then
-		local prefixIndex = string.find(scale, ":")
-		scale = string.sub(scale, prefixIndex+1,-1) --this command is ass, returns scale without a prefix because abyssal didnt take my suggestion
-		host:sendChatCommand('ggconfig adipose.setScale '..scale..' '..value)
-	end
-end
-
 -- MODEL FUNCTIONS
 local function setModelPartsVisibility(index)
     local visibleParts = {}
@@ -114,35 +93,40 @@ local function setGranularity(index, granularity)
 end
 pings.setGranularity=setGranularity
 
-local stuffedOverride = nil
 local function setStuffed(index, stuffed)
     local animation = adipose.weightStages[index].stuffedAnim
-    if animation == '' then return end    
-    if stuffedOverride then stuffed = stuffedOverride end    
-    
+    if animation == '' then return end	
+	
     animation:play()
     animation:setSpeed(0)
-    
+	
     local offset = animation:getLength() * stuffed
     animation:setOffset(offset)
 end
 pings.setStuffed = setStuffed
 
-function adipose.setStuffedOverride(stuffed)
-    stuffedOverride = stuffed
-end
-
 -- EVENTS
 function events.tick()
+    if player:getHealth() <= 0 then 
+        -- When the entity just died and the death screen appears
+        if not isDead then isDead = true end
+    else
+        if isDead then
+            adipose.setWeight(adipose.currentWeight, true)
+            isDead = false
+        end
+    end
+
     if timer < 0 then 
         timer = adipose.syncTimer
         
-		if not adipose.ggCheck then --Update the weight value
+		if not adipose.osCheck then --Update the weight value
 			local deltaWeight = checkFood() --All things that affect weight 
 			adipose.currentWeight = adipose.currentWeight + deltaWeight 
 		else
-			adipose.currentWeight = player:getNbt()["ForgeCaps"]["gluttonousgrowth:weightbar"]["currentweight"] --ignore everything and just sync with overstuffed 
+			adipose.currentWeight = player:getNbt()["ForgeCaps"]["overstuffed:weightbar"]["currentweight"] --ignore everything and just sync with overstuffed 
 		end
+		
 		
 		local packet = math.floor(adipose.currentWeight*10)/10
 		--print(packet)
@@ -155,59 +139,21 @@ end
 function events.entity_init()
 	if #adipose.weightStages == 0 then return end
 	
-	adipose.ggCheck = client.isModLoaded("gluttonousgrowth")
+	adipose.osCheck = client:isModLoaded("overstuffed")
 	
-	if adipose.ggCheck then 
-		local GGWeightBar = player:getNbt()["ForgeCaps"]["gluttonousgrowth:weightbar"]
+	if adipose.osCheck then 
+		local OSWeightBar = player:getNbt()["ForgeCaps"]["overstuffed:weightbar"]
 		
-		adipose.maxWeight = GGWeightBar["maxweight"]
-		adipose.minWeight = GGWeightBar["minweight"]
-		adipose.currentWeight = GGWeightBar["currentweight"]
-		
-		--print(adipose.maxWeight)
-		--print(adipose.minWeight)
-		--print(adipose.currentWeight)
+		adipose.maxWeight = OSWeightBar["maxweight"]
+		adipose.minWeight = OSWeightBar["minweight"]
+		adipose.currentWeight = OSWeightBar["currentweight"]
 	end
 	
-	adipose.pehkuiCheck = client.isModLoaded("pehkui")
-	adipose.p4aCheck = client.isModLoaded("pehkui4all")
-	adipose.opCheck = player:getPermissionLevel() == 4   
-	
-	--IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! \/
-	
-	--Scaling Startup Message
-	if adipose.scaling then
-		if adipose.pehkuiCheck then
-			if adipose.opCheck then
-				print("OP Detected, Using /scale for Scaling")
-			elseif adipose.p4aCheck then
-				print("Pehkui 4 All Detected, Using /lesserscale for Scaling")
-			elseif adipose.ggCheck then
-				print("Gluttonous Growth Detected, Using /ggconfig setScale for Scaling")
-			else
-				print("Insufficient Permissions for Scaling, Scaling Disabled")
-			end	
-		else
-			print("Pehkui not Installed, Scaling Disabled")
-		end
-	else 
-	
-	print("Scaling Manually Disabled")		
-	end
-	--IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! /\
-
-    adipose.setScale(adipose.pehkui.HITBOX_WIDTH, adipose.weightStages[1].hitboxWidth)
-    adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, adipose.weightStages[1].hitboxHeight)
-    adipose.setScale(adipose.pehkui.MOTION, adipose.weightStages[1].motion)
-    adipose.setScale(adipose.pehkui.EYE_HEIGHT, adipose.weightStages[1].eyeHeight)
-	
-	adipose.setWeight(adipose.currentWeight)	
+	adipose.opCheck = player:getPermissionLevel() == 4
 end
 
 -- WEIGHT MANAGEMENT
----Sets weight by amount. From adipose.minWeight (100) to adipose.maxWeight (1000).
----@param amount number
-function adipose.setWeight(amount)
+function adipose.setWeight(amount, forceUpdate)
     amount = math.clamp(amount, adipose.minWeight, adipose.maxWeight)
 		
     local index, granularity = calculateProgressFromWeight(amount)
@@ -216,38 +162,29 @@ function adipose.setWeight(amount)
     adipose.currentWeightStage = index
 
     adipose.granularWeight = granularity
-	
-	if oldindex ~= index then
-		oldindex = index
-		local stage = adipose.weightStages[index]
-		adipose.setScale(adipose.pehkui.HITBOX_WIDTH, stage.hitboxWidth)
-		adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, stage.hitboxHeight)
-		adipose.setScale(adipose.pehkui.MOTION, stage.motion)
-		adipose.setScale(adipose.pehkui.EYE_HEIGHT, stage.eyeHeight)
+
+    if oldindex ~= index or forceUpdate then
+        oldindex = index
+        adipose.onWeightChange(index, granularity)
+        pings.setModelPartsVisibility(index)
     end
 	
-	pings.setModelPartsVisibility(index)
-  
 	local stuffed = 0
-	if not adipose.ggCheck then
+	if not adipose.osCheck then
 		stuffed = player:getSaturation()/20
 	else
-		local curCalories = player:getNbt()["ForgeCaps"]["gluttonousgrowth:calmeter"]["curcalories"] or 0
-		stuffed = curCalories/player:getNbt()["ForgeCaps"]["gluttonousgrowth:calmeter"]["maxcalories"]
+		stuffed = player:getNbt()["ForgeCaps"]["overstuffed:properties"]["stuffedbar"]/9
 	end
 	
 	pings.setGranularity(index, granularity)
 	pings.setStuffed(index, stuffed)
-	
-	--print(index , granularity)
 
-    if not adipose.ggCheck and host:isHost() then 
+    if not adipose.osCheck and host:isHost() then 
         config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)
         config:save("adipose.currentWeightStage", adipose.currentWeightStage)
     end
 end
 
----@param stage number
 function adipose.setCurrentWeightStage(stage)
     stage = math.clamp(math.floor(stage), 1, #adipose.weightStages+1)
     adipose.setWeight(calculateWeightFromIndex(stage))
@@ -275,11 +212,8 @@ function adipose.weightStage:newStage()
         partsList = {},
         granularAnim = '',
 		stuffedAnim = '',
-        hitboxWidth = 1,
-        hitboxHeight = 1,
-        eyeHeight = 1,
-        motion = 1
-    }, adipose.weightStage)
+        scalingList = {}
+    }, self)
 
     table.insert(adipose.weightStages, obj)
     return obj
@@ -287,116 +221,45 @@ end
 
 
 -- WEIGHT STAGE METHODS
----@param parts ModelPart|[ModelPart]
+---@param parts table<Models|ModelPart>
 ---@return self
 function adipose.weightStage:setParts(parts)
-    assert(type(parts) == 'ModelPart' or type(parts) == 'table', "Invalid parts")
+    if type(parts) ~= 'table' then
+        if type(parts) ~= 'ModelParts' or type(partsList) ~= 'models' then
+            error("partsList must be a table or a ModelPart/Models object")
+        end
+    end
 
     -- Validate contents of the table
-    if type(parts) == 'table' then
-        for i, p in ipairs(parts) do
-            assert(type(p) == 'ModelPart', "Invalid part "..tostring(i))
-        end 
-    end
+    for i, p in ipairs(parts) do
+        if type(p) == 'ModelParts' or type(p) == 'models' then
+            error("The body part at position "..i.." is not a models or a ModelPart")
+        end
+    end 
 
     self.partsList = parts
     return self
 end
 
----@param animation Animation
+---@param animation animations
 ---@return self
 function adipose.weightStage:setGranularAnimation(animation)
     self.granularAnim = animation
     return self
 end
 
----@param animation Animation
+---@param animation animations
 ---@return self
 function adipose.weightStage:setStuffedAnimation(animation)
     self.stuffedAnim = animation
     return self
 end
 
----@param offset number
+---@param scaling table<string, boolean>
 ---@return self
-function adipose.weightStage:setEyeHeight(offset)
-    self.eyeHeight = offset
+function adipose.weightStage:setScaling(scaling)
+    self.scalingList = scaling
     return self
 end
 
----@param width number
----@return self
-function adipose.weightStage:setHitboxWidth(width)
-    self.hitboxWidth = width
-    return self
-end
-
----@param height number
----@return self
-function adipose.weightStage:setHitboxHeight(height)
-    self.hitboxHeight = height
-    return self
-end
-
----@param motion number
----@return self
-function adipose.weightStage:setMotion(motion)
-    self.motion = motion
-    return self
-end
-
--- FLAGS METHODS
----@param state boolean
-function adipose.setHitboxState(state)
-    local previousValue = adipose.hitbox
-
-    if state ~= previousValue then
-        adipose.hitbox = state
-
-        if state == true then
-            adipose.setScale(adipose.pehkui.HITBOX_WIDTH, adipose.weightStages[adipose.currentWeightStage].hitboxWidth)
-            adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, adipose.weightStages[adipose.currentWeightStage].hitboxHeight)
-            return
-        end
-
-        adipose.setScale(adipose.pehkui.HITBOX_WIDTH, 1)
-        adipose.setScale(adipose.pehkui.HITBOX_HEIGHT, 1)
-        return
-    end
-end
-
----@param state boolean
-function adipose.setMotionState(state)
-    local previousValue = adipose.motion
-
-    if state ~= previousValue then
-        adipose.motion = state
-
-        if state == true then
-            adipose.setScale(adipose.pehkui.MOTION, adipose.weightStages[adipose.currentWeightStage].motion)
-            return
-        end
-
-        adipose.setScale(adipose.pehkui.MOTION, 1)
-        return
-    end
-end
-
----@param state boolean
-function adipose.setEyeHeightState(state)
-    local previousValue = adipose.eyeHeight
-
-    if state ~= previousValue then
-        adipose.eyeHeight = state
-
-        if state == true then
-            adipose.setScale(adipose.pehkui.EYE_HEIGHT, adipose.weightStages[adipose.currentWeightStage].eyeHeight)
-            return
-        end
-
-        adipose.setScale(adipose.pehkui.EYE_HEIGHT, 1)
-        return
-    end
-end
- 
 return adipose
