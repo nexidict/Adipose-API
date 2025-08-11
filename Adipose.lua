@@ -171,7 +171,13 @@ function events.entity_init()
 	
 	adipose.pehkuiCheck = client.isModLoaded("pehkui")
 	adipose.p4aCheck = client.isModLoaded("pehkui4all")
-	adipose.opCheck = player:getPermissionLevel() == 4   
+	adipose.essentialCheck = client.isModLoaded("essential")
+	
+	if not adipose.essentialCheck then 
+	adipose.opCheck = player:getPermissionLevel() == 4
+	else
+	adipose.opCheck = false
+	end
 	
 	--IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! \/
 	
