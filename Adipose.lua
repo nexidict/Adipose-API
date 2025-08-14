@@ -139,14 +139,14 @@ end
 function events.entity_init()
 	if #adipose.weightStages == 0 then return end
 	
-	adipose.osCheck = client:isModLoaded("overstuffed")
+	adipose.ggCheck = client:isModLoaded("gluttonousgrowth")
 	
-	if adipose.osCheck then 
-		local OSWeightBar = player:getNbt()["ForgeCaps"]["overstuffed:weightbar"]
+	if adipose.ggCheck then 
+		local GGWeightBar = player:getNbt()["ForgeCaps"]["gluttonousgrowth:weightbar"]
 		
-		adipose.maxWeight = OSWeightBar["maxweight"]
-		adipose.minWeight = OSWeightBar["minweight"]
-		adipose.currentWeight = OSWeightBar["currentweight"]
+		adipose.maxWeight = GGWeightBar["maxweight"]
+		adipose.minWeight = GGWeightBar["minweight"]
+		adipose.currentWeight = GGWeightBar["currentweight"]
 	end
 	
 	adipose.opCheck = player:getPermissionLevel() == 4

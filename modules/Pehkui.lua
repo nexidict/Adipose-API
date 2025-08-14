@@ -53,7 +53,7 @@ function events.entity_init()
 
     --IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! \/
 
-    --[[ if pehkui.pehkuiCheck then
+    if pehkui.pehkuiCheck then
         if pehkui.opCheck then
             print("OP Detected, Using /scale for Scaling")
         elseif pehkui.p4aCheck then
@@ -62,8 +62,8 @@ function events.entity_init()
             print("Insufficient Permissions for Scaling, Scaling Disabled")
         end	
     else
-        print("Pehkui not Installed, Scaling Disabled")
-    end ]]
+        print("Pehkui not Installed, scaling Disabled")
+    end
 
     --IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! /\
 
@@ -87,7 +87,7 @@ end
 
 -- SCALING
 function pehkui.setScale(scale, value)
-    if pehkui.opCheck then
+    if pehkui.opCheck and pehkui.pehkuiCheck then
         commandQueue:push('scale set '..scale..' '..value..' @s')
     elseif pehkui.p4aCheck then
         local prefixIndex = string.find(scale, ":")
