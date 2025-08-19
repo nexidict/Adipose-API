@@ -137,18 +137,7 @@ function events.tick()
 end
 
 function events.entity_init()
-	if #adipose.weightStages == 0 then return end
-	
-	adipose.ggCheck = client:isModLoaded("gluttonousgrowth")
-	
-	if adipose.ggCheck then 
-		local GGWeightBar = player:getNbt()["ForgeCaps"]["gluttonousgrowth:weightbar"]
-		
-		adipose.maxWeight = GGWeightBar["maxweight"]
-		adipose.minWeight = GGWeightBar["minweight"]
-		adipose.currentWeight = GGWeightBar["currentweight"]
-	end
-	
+	if #adipose.weightStages == 0 then return end	
 	adipose.opCheck = player:getPermissionLevel() == 4
 end
 
