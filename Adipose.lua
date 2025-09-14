@@ -12,8 +12,11 @@ adipose.currentWeight = config:load("adipose.currentWeight") or adipose.minWeigh
 adipose.granularWeight = 0
 adipose.currentWeightStage = config:load("adipose.currentWeightStage") or 1
 
-adipose.syncTimer = 20
-local timer = adipose.syncTimer
+adipose.syncTimer = 100
+adipose.foodTimer = 20
+
+local syncTimer = adipose.syncTimer
+local foodTimer = adipose.foodTimer
 local oldindex = nil
 local isDead = false
 
@@ -27,7 +30,6 @@ function adipose.setOnWeightChange(callback)
 end
 
 local function checkFood()
-	-- only runs if OverStuffed isnt installed
     local deltaWeight = 0
 
     if player:getSaturation() > 2 then
@@ -117,23 +119,19 @@ function events.tick()
         end
     end
 
-    if timer < 0 then 
-        timer = adipose.syncTimer
+    if syncTimer < 0 then 
+        syncTimer = adipose.syncTimer
         
-		if not adipose.osCheck then --Update the weight value
-			local deltaWeight = checkFood() --All things that affect weight 
-			adipose.currentWeight = adipose.currentWeight + deltaWeight 
-		else
-			adipose.currentWeight = player:getNbt()["ForgeCaps"]["overstuffed:weightbar"]["currentweight"] --ignore everything and just sync with overstuffed 
-		end
-		
-		
 		local packet = math.floor(adipose.currentWeight*10)/10
-		--print(packet)
-		adipose.setWeight(packet) -- set weight to current value
-    else 
-		timer = timer - 1
-	end
+		adipose.setWeight(packet)
+    else syncTimer = syncTimer - 1 end
+
+    if foodTimer < 0 then
+        foodTimer = adipose.foodTimer
+
+        local deltaWeight = checkFood()
+        adipose.currentWeight = adipose.currentWeight + deltaWeight 	
+    else foodTimer = foodTimer - 1 end
 end
 
 function events.entity_init()
@@ -158,17 +156,12 @@ function adipose.setWeight(amount, forceUpdate)
         pings.setModelPartsVisibility(index)
     end
 	
-	local stuffed = 0
-	if not adipose.osCheck then
-		stuffed = player:getSaturation()/20
-	else
-		stuffed = player:getNbt()["ForgeCaps"]["overstuffed:properties"]["stuffedbar"]/9
-	end
+	local stuffed = player:getSaturation()/20
 	
 	pings.setGranularity(index, granularity)
 	pings.setStuffed(index, stuffed)
 
-    if not adipose.osCheck and host:isHost() then 
+    if host:isHost() then 
         config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)
         config:save("adipose.currentWeightStage", adipose.currentWeightStage)
     end
