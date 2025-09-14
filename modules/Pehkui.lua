@@ -45,6 +45,42 @@ pehkui.options = {
 local queueTimer = 0
 local commandQueue = queueLib:new()
 
+-- FLAGS
+local function loadConfig()
+    for k, default in pairs(pehkui.options) do
+        local stored = config:load(k)
+        if stored == nil then
+            config:save(k, default)
+            -- log("Created config entry: " .. k .. " = " .. tostring(default))
+        else
+            pehkui.options[k] = stored
+            -- log("Loaded config entry: " .. k .. " = " .. tostring(stored))
+        end
+    end
+end
+
+function pehkui.initFlags(scaleList)
+    local changed = false
+    for k, _ in pairs(scaleList) do
+        -- Only create if it doesn't exist at all
+        if pehkui.options[k] == nil then
+            pehkui.options[k] = true   -- default for new keys
+            config:save(k, true)
+            changed = true
+            log("Registered new scaling flag: " .. k)
+        end
+    end
+    if changed then
+        log("Pehkui flags updated")
+    end
+end
+
+function pehkui.setScaleState(scale, state)
+    assert(pehkui.options[scale] ~= nil, 'Unknown scaling option')
+    pehkui.options[scale] = state
+    config:save(scale, state)
+end
+
 -- EVENTS
 function events.entity_init()
     pehkui.pehkuiCheck = client:isModLoaded("pehkui")
@@ -67,10 +103,7 @@ function events.entity_init()
 
     --IF YOU HATE THE STARTUP MESSAGE THIS IS THE THING TO DELETE! /\
 
-    for k, v in pairs(pehkui.options) do
-        if config:load(k) == nil then config:save(k, v)
-        elseif config:load(k) ~= v then pehkui.options[k] = v end
-    end
+    loadConfig()
 end
 
 function events.tick()
@@ -80,37 +113,22 @@ function events.tick()
         if commandQueue:isEmpty() then return end
 
         local command = commandQueue:pop()
-        --log(command)
+        log(command)
         host:sendChatCommand(command)
     else queueTimer = queueTimer + 1 end
 end
 
 -- SCALING
 function pehkui.setScale(scale, value)
+    if pehkui.options[scale] == false and value ~= 1 then return end
+
     if pehkui.opCheck and pehkui.pehkuiCheck then
         commandQueue:push('scale set '..scale..' '..value..' @s')
     elseif pehkui.p4aCheck then
         local prefixIndex = string.find(scale, ":")
-		scale = string.sub(scale, prefixIndex+1,-1)
-		commandQueue:push('lesserscale set '..value..' '..scale)	
+        scale = string.sub(scale, prefixIndex+1)
+        commandQueue:push('lesserscale set '..value..' '..scale)
     end
-end
-
--- FLAGS
-function pehkui.initFlags(scaleList)
-    for k, _ in pairs(scaleList) do pehkui.options[k] = true end
-
-    if host:isHost() then
-        for k, v in pairs(pehkui.options) do
-            config:save(k, v)
-        end
-    end
-end
-
-function pehkui.setScaleState(scale, state)
-    assert(pehkui.options[scale] ~= nil, 'Unknown scaling option')
-    pehkui.options[scale] = state
-    config:save(scale, state)
 end
 
 return pehkui
