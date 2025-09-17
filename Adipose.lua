@@ -91,7 +91,6 @@ local function setGranularity(index, granularity)
     local offset = animation:getLength() * granularity
     animation:setOffset(offset)
 end
-pings.setGranularity=setGranularity
 
 local function setStuffed(index, stuffed)
     local animation = adipose.weightStages[index].stuffedAnim
@@ -103,7 +102,6 @@ local function setStuffed(index, stuffed)
     local offset = animation:getLength() * stuffed
     animation:setOffset(offset)
 end
-pings.setStuffed = setStuffed
 
 -- EVENTS
 function events.tick()
@@ -154,8 +152,8 @@ function adipose.setWeight(amount, forceUpdate)
 	
 	local stuffed = player:getSaturation()/20
 	
-	pings.setGranularity(index, granularity)
-	pings.setStuffed(index, stuffed)
+	setGranularity(index, granularity)
+	setStuffed(index, stuffed)
 
     if host:isHost() then 
         config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)

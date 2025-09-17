@@ -13,6 +13,8 @@ adipose.weightStage:newStage()
 adipose.weightStage:newStage()
 	:setParts({models.stage2})
 	:setScaling({ "pehkui:hitbox_width", 1.25 })
+	:setGranularAnimation(animations.stage2.granularity)
+	:setStuffedAnimation(animations.stage2.stuffed)
 	
 adipose.weightStage:newStage()
 	:setParts({models.stage3})
