@@ -12,10 +12,8 @@ adipose.currentWeight = config:load("adipose.currentWeight") or adipose.minWeigh
 adipose.granularWeight = 0
 adipose.currentWeightStage = config:load("adipose.currentWeightStage") or 1
 
-adipose.syncTimer = 100
 adipose.foodTimer = 20
 
-local syncTimer = adipose.syncTimer
 local foodTimer = adipose.foodTimer
 local oldindex = nil
 local isDead = false
@@ -119,19 +117,14 @@ function events.tick()
         end
     end
 
-    if syncTimer < 0 then 
-        syncTimer = adipose.syncTimer
-        
-		local packet = math.floor(adipose.currentWeight*10)/10
-		adipose.setWeight(packet)
-    else syncTimer = syncTimer - 1 end
-
     if foodTimer < 0 then
         foodTimer = adipose.foodTimer
 
         local deltaWeight = checkFood()
         adipose.currentWeight = adipose.currentWeight + deltaWeight 	
-    else foodTimer = foodTimer - 1 end
+    else
+        foodTimer = foodTimer - 1
+    end
 end
 
 function events.entity_init()
@@ -154,6 +147,9 @@ function adipose.setWeight(amount, forceUpdate)
         oldindex = index
         adipose.onWeightChange(index, granularity)
         pings.setModelPartsVisibility(index)
+        if host:isHost() then
+            avatar:store("adipose.weightStageIndex", index)
+        end
     end
 	
 	local stuffed = player:getSaturation()/20
@@ -242,6 +238,21 @@ end
 function adipose.weightStage:setScaling(scaling)
     self.scalingList = scaling
     return self
+end
+
+if not host:isHost() then
+    -- last seen by this client
+    local weightStageIndex = nil
+    function events.tick()
+        local vars = world.avatarVars()[avatar:getUUID()]
+        if not vars then return end
+        local index = vars["adipose.weightStageIndex"]
+        if not index then return end
+        if weightStageIndex ~= index then
+            pings.setModelPartsVisibility(index)
+            weightStageIndex = index
+        end
+    end
 end
 
 return adipose
