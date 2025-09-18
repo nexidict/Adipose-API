@@ -125,6 +125,24 @@ function events.tick()
     end
 end
 
+if not host:isHost() then
+    -- last seen by this client
+    local weightStageIndex = nil
+
+    function events.tick()
+        local vars = world.avatarVars()[avatar:getUUID()]
+        if not vars then return end
+
+        local index = vars["adipose.weightStageIndex"]
+        if not index then return end
+        
+        if weightStageIndex ~= index then
+            pings.setModelPartsVisibility(index)
+            weightStageIndex = index
+        end
+    end
+end
+
 function events.entity_init()
 	if #adipose.weightStages == 0 then return end	
 	adipose.opCheck = player:getPermissionLevel() == 4
@@ -236,21 +254,6 @@ end
 function adipose.weightStage:setScaling(scaling)
     self.scalingList = scaling
     return self
-end
-
-if not host:isHost() then
-    -- last seen by this client
-    local weightStageIndex = nil
-    function events.tick()
-        local vars = world.avatarVars()[avatar:getUUID()]
-        if not vars then return end
-        local index = vars["adipose.weightStageIndex"]
-        if not index then return end
-        if weightStageIndex ~= index then
-            pings.setModelPartsVisibility(index)
-            weightStageIndex = index
-        end
-    end
 end
 
 return adipose
