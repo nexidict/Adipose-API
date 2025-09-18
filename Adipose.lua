@@ -143,6 +143,14 @@ if not host:isHost() then
     end
 end
 
+events.TICK:register(function ()
+    if not isInit then
+        adipose.setWeight(adipose.currentWeight)
+        events.TICK:remove("InitAdiposeModel")
+        isInit = true
+    end
+end, "InitAdiposeModel")
+
 function events.entity_init()
 	if #adipose.weightStages == 0 then return end	
 	adipose.opCheck = player:getPermissionLevel() == 4
