@@ -144,11 +144,8 @@ if not host:isHost() then
 end
 
 events.TICK:register(function ()
-    if not isInit then
-        adipose.setWeight(adipose.currentWeight)
-        events.TICK:remove("InitAdiposeModel")
-        isInit = true
-    end
+    adipose.setWeight(adipose.currentWeight)
+    events.TICK:remove("InitAdiposeModel")
 end, "InitAdiposeModel")
 
 function events.entity_init()
