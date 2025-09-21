@@ -5,7 +5,7 @@ local adipose = {}
 adipose.minWeight = 100
 adipose.maxWeight = 1000
 
-adipose.weightRate = 0.01
+adipose.weightRate = 0.1
 
 adipose.pehkui = {
     HITBOX_WIDTH =  'pehkui:hitbox_width',
@@ -18,8 +18,8 @@ adipose.pehkui = {
 adipose.currentWeight = config:load("adipose.currentWeight") or adipose.minWeight
 adipose.granularWeight = 0
 adipose.currentWeightStage = config:load("adipose.currentWeightStage") or 1
-
-adipose.syncTimer = 20
+adipose.stuffed = 0 
+adipose.syncTimer = 100
 local timer = adipose.syncTimer
 local oldindex = nil
 
@@ -103,28 +103,42 @@ end
 pings.setModelPartsVisibility=setModelPartsVisibility
 
 local function setGranularity(index, granularity)
-    local animation = adipose.weightStages[index].granularAnim
-    if animation == '' then return end
-
-    animation:play()
-    animation:setSpeed(0)
-
-    local offset = animation:getLength() * granularity
-    animation:setOffset(offset)
+	for i, weightStage in ipairs(adipose.weightStages) do 
+	    local animation = adipose.weightStages[i].granularAnim
+		
+		if animation ~= '' then
+			if index == i then
+				animation:play()
+				animation:setSpeed(0)
+				
+				local offset = animation:getLength() * granularity
+				animation:setOffset(offset)
+			else
+				animation:stop()
+			end
+		end
+	end
 end
 pings.setGranularity=setGranularity
 
 local stuffedOverride = nil
 local function setStuffed(index, stuffed)
-    local animation = adipose.weightStages[index].stuffedAnim
-    if animation == '' then return end    
-    if stuffedOverride then stuffed = stuffedOverride end    
-    
-    animation:play()
-    animation:setSpeed(0)
-    
-    local offset = animation:getLength() * stuffed
-    animation:setOffset(offset)
+	for i, weightStage in ipairs(adipose.weightStages) do 
+	    local animation = adipose.weightStages[i].stuffedAnim
+		
+		if animation ~= '' then
+			if index == i then
+				if stuffedOverride then stuffed = stuffedOverride end    
+			    animation:play()
+				animation:setSpeed(0)
+		
+				local offset = animation:getLength() * stuffed
+				animation:setOffset(offset)	
+			else
+				animation:stop()
+			end
+		end
+	end
 end
 pings.setStuffed = setStuffed
 
@@ -221,8 +235,7 @@ function adipose.setWeight(amount)
     adipose.currentWeight = amount
     adipose.currentWeightStage = index
 
-    adipose.granularWeight = granularity
-	
+
 	if oldindex ~= index then
 		oldindex = index
 		local stage = adipose.weightStages[index]
@@ -241,6 +254,11 @@ function adipose.setWeight(amount)
 		local curCalories = player:getNbt()["ForgeCaps"]["gluttonousgrowth:calmeter"]["curcalories"] or 0
 		stuffed = curCalories/player:getNbt()["ForgeCaps"]["gluttonousgrowth:calmeter"]["maxcalories"]
 	end
+	
+	
+	adipose.granularWeight = granularity
+	adipose.stuffed = stuffed
+	
 	
 	pings.setGranularity(index, granularity)
 	pings.setStuffed(index, stuffed)
