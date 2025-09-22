@@ -79,7 +79,7 @@ local function setModelPartsVisibility(index)
         end
     end
 end
-pings.setModelPartsVisibility=setModelPartsVisibility
+pings.setModelPartsVisibility= setModelPartsVisibility
 
 local function setGranularity(index, granularity)
     local animation = adipose.weightStages[index].granularAnim
@@ -126,14 +126,15 @@ function events.tick()
 end
 
 if not host:isHost() then
-    -- last seen by this client
     local weightStageIndex = nil
 
     function events.tick()
         local vars = world.avatarVars()[avatar:getUUID()]
         if not vars then return end
+        --log(vars)
 
         local index = vars["adipose.weightStageIndex"]
+
         if not index then return end
         
         if weightStageIndex ~= index then
@@ -143,12 +144,21 @@ if not host:isHost() then
     end
 end
 
-events.TICK:register(function ()
-    adipose.setWeight(adipose.currentWeight)
-    events.TICK:remove("InitAdiposeModel")
-end, "InitAdiposeModel")
+if host:isHost() then
+    local initTimer = 25
 
-function events.entity_init()
+    events.TICK:register(function ()
+        if initTimer > 0 then
+            initTimer = initTimer - 1
+            return
+        end
+
+        adipose.setWeight(adipose.currentWeight)
+        events.TICK:remove("InitAdiposeModel")
+    end, "InitAdiposeModel")
+end
+
+function events.entity_init()   
 	if #adipose.weightStages == 0 then return end	
 	adipose.opCheck = player:getPermissionLevel() == 4
 end
@@ -168,9 +178,6 @@ function adipose.setWeight(amount, forceUpdate)
         oldindex = index
         adipose.onWeightChange(index, granularity)
         pings.setModelPartsVisibility(index)
-        if host:isHost() then
-            avatar:store("adipose.weightStageIndex", index)
-        end
     end
 	
 	local stuffed = player:getSaturation()/20
@@ -178,10 +185,8 @@ function adipose.setWeight(amount, forceUpdate)
 	setGranularity(index, granularity)
 	setStuffed(index, stuffed)
 
-    if host:isHost() then 
-        config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)
-        config:save("adipose.currentWeightStage", adipose.currentWeightStage)
-    end
+    config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)
+    config:save("adipose.currentWeightStage", adipose.currentWeightStage)
 end
 
 function adipose.setCurrentWeightStage(stage)
