@@ -17,6 +17,7 @@ adipose.foodTimer = 20
 local foodTimer = adipose.foodTimer
 local oldindex = nil
 local isDead = false
+local knownReceivers = {}
 
 adipose.scaling = true
 
@@ -25,22 +26,6 @@ adipose.onWeightChange = function(_, _) end
 
 function adipose.setOnWeightChange(callback)
     adipose.onWeightChange = callback
-end
-
-local function checkFood()
-    local deltaWeight = 0
-
-    if player:getSaturation() > 2 then
-        deltaWeight =
-            deltaWeight + (player:getSaturation() - 2) * adipose.weightRate	
-    end
-
-    if player:getFood() < 17 then
-		deltaWeight = 
-            deltaWeight - (17 - player:getFood()) * adipose.weightRate
-	end
-
-    return deltaWeight
 end
 
 local function calculateWeightFromIndex(index)
@@ -66,6 +51,12 @@ local function calculateProgressFromWeight(weight)
 	return index, granularity
 end
 
+local function tablesEqual(a, b)
+    for k in pairs(a) do if not b[k] then return false end end
+    for k in pairs(b) do if not a[k] then return false end end
+    return true
+end
+
 -- MODEL FUNCTIONS
 local function setModelPartsVisibility(index)
     local visibleParts = {}
@@ -79,7 +70,6 @@ local function setModelPartsVisibility(index)
         end
     end
 end
-pings.setModelPartsVisibility= setModelPartsVisibility
 
 local function setGranularity(index, granularity)
     local animation = adipose.weightStages[index].granularAnim
@@ -110,37 +100,30 @@ function events.tick()
         if not isDead then isDead = true end
     else
         if isDead then
-            adipose.setWeight(adipose.currentWeight, true)
+            pings.AdiposeSetWeight(adipose.currentWeight, true)
             isDead = false
         end
     end
-
-    if foodTimer < 0 then
-        foodTimer = adipose.foodTimer
-
-        local deltaWeight = checkFood()
-        adipose.currentWeight = adipose.currentWeight + deltaWeight 	
-    else
-        foodTimer = foodTimer - 1
-    end
 end
 
-if not host:isHost() then
-    local weightStageIndex = nil
+function events.tick()
+    local doPing = false
+    local newReceinvers = {}
 
-    function events.tick()
-        local vars = world.avatarVars()[avatar:getUUID()]
-        if not vars then return end
-        --log(vars)
+    for _, v in pairs(world:getPlayers()) do
+        local uuid = v:getUUID()
 
-        local index = vars["adipose.weightStageIndex"]
+        if uuid ~= avatar:getUUID() then
+            newReceinvers[uuid] = true
 
-        if not index then return end
-        
-        if weightStageIndex ~= index then
-            pings.setModelPartsVisibility(index)
-            weightStageIndex = index
+            if not knownReceivers[uuid] then doPing = true end
         end
+    end
+
+    if not tablesEqual(knownReceivers, newReceinvers) then
+        knownReceivers = newReceinvers
+
+        if doPing then pings.AdiposeSetWeight(adipose.currentWeight, true) end
     end
 end
 
@@ -153,7 +136,7 @@ if host:isHost() then
             return
         end
 
-        adipose.setWeight(adipose.currentWeight)
+        pings.AdiposeSetWeight(adipose.currentWeight)
         events.TICK:remove("InitAdiposeModel")
     end, "InitAdiposeModel")
 end
@@ -164,7 +147,7 @@ function events.entity_init()
 end
 
 -- WEIGHT MANAGEMENT
-function adipose.setWeight(amount, forceUpdate)
+function adipose.setWeight(amount, forceUpdate)    
     amount = math.clamp(amount, adipose.minWeight, adipose.maxWeight)
 		
     local index, granularity = calculateProgressFromWeight(amount)
@@ -177,7 +160,7 @@ function adipose.setWeight(amount, forceUpdate)
     if oldindex ~= index or forceUpdate then
         oldindex = index
         adipose.onWeightChange(index, granularity)
-        pings.setModelPartsVisibility(index)
+        setModelPartsVisibility(index)
     end
 	
 	local stuffed = player:getSaturation()/20
@@ -188,20 +171,21 @@ function adipose.setWeight(amount, forceUpdate)
     config:save("adipose.currentWeight", math.floor(adipose.currentWeight*10)/10)
     config:save("adipose.currentWeightStage", adipose.currentWeightStage)
 end
+pings.AdiposeSetWeight = adipose.setWeight
 
 function adipose.setCurrentWeightStage(stage)
     stage = math.clamp(math.floor(stage), 1, #adipose.weightStages+1)
-    adipose.setWeight(calculateWeightFromIndex(stage))
+    pings.AdiposeSetWeight(calculateWeightFromIndex(stage))
 end
 
 function adipose.adjustWeightByAmount(amount)
     amount = math.clamp((adipose.currentWeight + math.floor(amount)), adipose.minWeight, adipose.maxWeight)
-    adipose.setWeight(amount)
+    pings.AdiposeSetWeight(amount)
 end
 
 function adipose.adjustWeightByStage(amount)
     amount = math.clamp((adipose.currentWeightStage + math.floor(amount)), 1, #adipose.weightStages+1)
-    adipose.setWeight(calculateWeightFromIndex(amount) + 1)-- +1 is padding for hunger decay
+    pings.AdiposeSetWeight(calculateWeightFromIndex(amount))
 end
 
 -- WEIGHT STAGE
