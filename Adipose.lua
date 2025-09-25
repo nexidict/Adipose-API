@@ -103,8 +103,8 @@ end
 pings.setModelPartsVisibility=setModelPartsVisibility
 
 local function setGranularity(index, granularity)
-	for i, weightStage in ipairs(adipose.weightStages) do 
-	    local animation = adipose.weightStages[i].granularAnim
+	for i, stage in ipairs(adipose.weightStages) do 
+	    local animation = stage.granularAnim
 		
 		if animation ~= '' then
 			if index == i then
@@ -123,8 +123,8 @@ pings.setGranularity=setGranularity
 
 local stuffedOverride = nil
 local function setStuffed(index, stuffed)
-	for i, weightStage in ipairs(adipose.weightStages) do 
-	    local animation = adipose.weightStages[i].stuffedAnim
+	for i, stage in ipairs(adipose.weightStages) do 
+	    local animation = stage.stuffedAnim
 		
 		if animation ~= '' then
 			if index == i then
