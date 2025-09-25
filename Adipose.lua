@@ -5,16 +5,12 @@ local adipose = {}
 adipose.minWeight = 100
 adipose.maxWeight = 1000
 
-adipose.weightRate = 0.01
-
 -- VARIABLES
 adipose.currentWeight = config:load("adipose.currentWeight") or adipose.minWeight
 adipose.granularWeight = 0
 adipose.currentWeightStage = config:load("adipose.currentWeightStage") or 1
+adipose.stuffed = 0
 
-adipose.foodTimer = 20
-
-local foodTimer = adipose.foodTimer
 local oldindex = nil
 local isDead = false
 local knownReceivers = {}
@@ -72,25 +68,41 @@ local function setModelPartsVisibility(index)
 end
 
 local function setGranularity(index, granularity)
-    local animation = adipose.weightStages[index].granularAnim
-    if animation == '' then return end
+    for i, stage in ipairs(adipose.weightStages) do 
+	    local animation = stage.granularAnim
 
-    animation:play()
-    animation:setSpeed(0)
+		if animation ~= '' then
+			if index == i then
+				animation:play()
+				animation:setSpeed(0)
 
-    local offset = animation:getLength() * granularity
-    animation:setOffset(offset)
+				local offset = animation:getLength() * granularity
+				animation:setOffset(offset)
+			else
+				animation:stop()
+			end
+		end
+	end
 end
 
+local stuffedOverride = nil
 local function setStuffed(index, stuffed)
-    local animation = adipose.weightStages[index].stuffedAnim
-    if animation == '' then return end	
-	
-    animation:play()
-    animation:setSpeed(0)
-	
-    local offset = animation:getLength() * stuffed
-    animation:setOffset(offset)
+    for i, stage in ipairs(adipose.weightStages) do 
+	    local animation = stage.stuffedAnim
+
+		if animation ~= '' then
+			if index == i then
+				if stuffedOverride then stuffed = stuffedOverride end    
+			    animation:play()
+				animation:setSpeed(0)
+
+				local offset = animation:getLength() * stuffed
+				animation:setOffset(offset)	
+			else
+				animation:stop()
+			end
+		end
+	end
 end
 
 -- EVENTS
