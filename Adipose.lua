@@ -71,7 +71,7 @@ local function setGranularity(index, granularity)
     for i, stage in ipairs(adipose.weightStages) do 
 	    local animation = stage.granularAnim
 
-		if animation ~= '' then
+		if animation then
 			if index == i then
 				animation:play()
 				animation:setSpeed(0)
@@ -90,7 +90,7 @@ local function setStuffed(index, stuffed)
     for i, stage in ipairs(adipose.weightStages) do 
 	    local animation = stage.stuffedAnim
 
-		if animation ~= '' then
+		if animation then
 			if index == i then
 				if stuffedOverride then stuffed = stuffedOverride end    
 			    animation:play()
@@ -210,8 +210,8 @@ adipose.weightStage.__index = adipose.weightStage
 function adipose.weightStage:newStage()
     local obj = setmetatable({
         partsList = {},
-        granularAnim = '',
-		stuffedAnim = '',
+        granularAnim = nil,
+		stuffedAnim = nil,
         scalingList = {}
     }, self)
 
