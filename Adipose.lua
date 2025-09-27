@@ -120,20 +120,20 @@ end
 
 function events.tick()
     local doPing = false
-    local newReceinvers = {}
+    local newReceivers = {}
 
     for _, v in pairs(world:getPlayers()) do
         local uuid = v:getUUID()
 
         if uuid ~= avatar:getUUID() then
-            newReceinvers[uuid] = true
+            newReceivers[uuid] = true
 
             if not knownReceivers[uuid] then doPing = true end
         end
     end
 
-    if not tablesEqual(knownReceivers, newReceinvers) then
-        knownReceivers = newReceinvers
+    if not tablesEqual(knownReceivers, newReceivers) then
+        knownReceivers = newReceivers
 
         if doPing then pings.AdiposeSetWeight(adipose.currentWeight, true) end
     end
