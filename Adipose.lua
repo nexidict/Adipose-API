@@ -153,13 +153,10 @@ if host:isHost() then
     end, "InitAdiposeModel")
 end
 
-function events.entity_init()   
-	if #adipose.weightStages == 0 then return end	
-	adipose.opCheck = player:getPermissionLevel() == 4
-end
-
 -- WEIGHT MANAGEMENT
 function adipose.setWeight(amount, forceUpdate)    
+    if #adipose.weightStages == 0 then return end	
+
     amount = math.clamp(amount, adipose.minWeight, adipose.maxWeight)
 		
     local index, granularity = calculateProgressFromWeight(amount)
