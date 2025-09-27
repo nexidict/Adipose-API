@@ -14,6 +14,8 @@ adipose.stuffed = 0
 local oldindex = nil
 local isDead = false
 local knownReceivers = {}
+local timerDuration = 40
+local timer = timerDuration
 
 adipose.scaling = true
 
@@ -49,10 +51,14 @@ local function calculateProgressFromWeight(weight)
 	return index, granularity
 end
 
-local function tablesEqual(a, b)
-    for k in pairs(a) do if not b[k] then return false end end
-    for k in pairs(b) do if not a[k] then return false end end
-    return true
+local function doTimer()
+    if timer > 0 then
+        timer = timer - 1
+        return false
+    else
+        timer = timerDuration
+        return true
+    end
 end
 
 -- MODEL FUNCTIONS
@@ -121,6 +127,8 @@ function events.tick()
 end
 
 function events.tick()
+    if not doTimer() then return end
+
     local doPing = false
     local newReceivers = {}
 
@@ -134,11 +142,8 @@ function events.tick()
         end
     end
 
-    if not tablesEqual(knownReceivers, newReceivers) then
-        knownReceivers = newReceivers
-
-        if doPing then pings.AdiposeSetWeight(adipose.currentWeight, true) end
-    end
+    knownReceivers = newReceivers
+    if doPing then pings.AdiposeSetWeight(adipose.currentWeight, true) end
 end
 
 if host:isHost() then
