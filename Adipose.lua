@@ -259,7 +259,7 @@ function adipose.weightStage:setStuffedAnimation(animation)
     return self
 end
 
----@param scaling table<string, boolean>
+---@param scaling table<string, number>
 ---@return self
 function adipose.weightStage:setScaling(scaling)
     self.scalingList = scaling

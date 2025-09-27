@@ -18,14 +18,7 @@ Figura library that adds Weight Gain functionality with animation support.
     - [Set Parts](#setparts)
     - [Set Granular Animation](#setgranularanimation)
     - [Set Stuffed Animation](#setstuffedanimation)
-    - [Set Eye Height](#seteyeheight)
-    - [Set Hitbox Width](#sethitboxwidth)
-    - [Set Hitbox Height](#sethitboxheight)
-    - [Set Motion](#setmotion)
-  - [Flags](#flags)
-    - [Set Hitbox State](#sethitboxstate)
-    - [Set Motion State](#setmotionstate)
-    - [Set Eye Height State](#seteyeheightstate)
+    - [Set Scaling List](#setscaling)
 
 ## ⚙️ Features
 
@@ -33,19 +26,10 @@ Figura library that adds Weight Gain functionality with animation support.
 - **Granular Weight Gain**: use an animation to smooth out the transition between stages.
 - **Stuffed Animation**: use an animation to reflect stomach fullness.
 - **Weight Saving via Config**: your weight won't reset on a model reload.
-- **Pehkui Compatibility**: When designating a stage you can set certain Pehkui scales for each stage.
-  - Automatically picks commands based on permissions.
-  - If Pehkui4All is installed, lesserscale will be used if scale isnt available (**Ensure relevant scales are enabled in P4A config)**.
-- **[Overstuffed](https://forum.weightgaming.com/t/overstuffed-an-actual-working-minecraft-weight-gain-mod/47948) mod compatibility**: When Overstuffed is installed, adipose will use Overstuffed's stuffed, weight values and Pehkui commands automatically.
-
-> **Note: Pehkui, Pehkui4All or Overstuffed are optional**. Adipose will check for their presence, and if they are not installed, it will skip Pehkui related commands. The library will still change weight and update the model without them.
-
-**⚠ ENSURE Figura's "Chat Messages" setting is set to _ON_ for scaling to occur ⚠**
-![Figura Chat Messages Setting](https://github.com/user-attachments/assets/210014bc-9efc-40c7-908d-6aba5c42277c)
 
 ## 🛠️ Installation
 
-1. Download the file [`Adipose.lua`](https://github.com/Tyrus5255/Adipose-API/blob/15b73dac8e77e5a7117cf1bcc6e2034bfa7e36e1/Adipose.lua) and drop it into your Figura avatar project.
+1. Download the file [`Adipose.lua`](https://github.com/nexidict/Adipose-API/blob/main/Adipose.lua) and drop it into your Figura avatar project.
 
 2. Import the library:
 
@@ -58,24 +42,18 @@ Figura library that adds Weight Gain functionality with animation support.
     ```lua
     adipose.weightStage:newStage()
           :setParts(models.modelW0)
-          :setEyeHeight(1)
-          :setHitboxWidth(1)
-          :setHitboxHeight(1)
-          :setMotion(1)
+          :setGranularAnimation(animations.modelW0.granularity)
+          :setStuffedAnimation(animations.modelW0.stuffed)
 
     adipose.weightStage:newStage()
           :setParts(models.modelW1)
-          :setEyeHeight(1)
-          :setHitboxWidth(2)
-          :setHitboxHeight(1)
-          :setMotion(0.5)
+          :setGranularAnimation(animations.modelW1.granularity)
+          :setStuffedAnimation(animations.modelW1.stuffed)
 
     adipose.weightStage:newStage()
           :setParts(models.modelW2)
-          :setEyeHeight(2)
-          :setHitboxWidth(3)
-          :setHitboxHeight(2)
-          :setMotion(0.1)
+          :setGranularAnimation(animations.modelW2.granularity)
+          :setStuffedAnimation(animations.modelW2.stuffed)
     ```
 
 4. Save your script.
@@ -265,15 +243,17 @@ Type | Description
 stage:setStuffedAnimation(animations.model.stuffed)
 ```
 
-#### `setEyeHeight()`
+#### `setScaling()`
 
-Set the eye height at this stage.
+Set the key-value pair list containing scaling parameters and values.
+
+This only serves as a helper table to store potential Pehkui scaling options. Meant to be paired with the [Pehkui Figura](https://github.com/nexidict/Pehkui-Figura) script.
 
 **Parameters:**
 
 Name | Type | Description
 ---  | ---  | ---
-offset | `Number` | Value of `pehkui:eye_height` to set when this stage is entered.
+scaling | `table<string, number>` | Table of string-value pairs
 
 **Returns:**
 
@@ -284,123 +264,11 @@ Type | Description
 **Example:**
 
 ```lua
-stage:setEyeHeight(1)
-```
-
-#### `setHitboxWidth()`
-
-Set the hitbox width at this stage.
-
-**Parameters:**
-
-Name | Type | Description
----  | ---  | ---
-width | `Number` | Value of `pehkui:hitbox_width` to set when this stage is entered.
-
-**Returns:**
-
-Type | Description
----  | ---
-`Adipose.WeightStage` | Returns self for chaining
-
-**Example:**
-
-```lua
-stage:setHitboxWidth(1)
-```
-
-#### `setHitboxHeight()`
-
-Set the hitbox height at this stage.
-
-**Parameters:**
-
-Name | Type | Description
----  | ---  | ---
-height | `Number` | Value of `pehkui:hitbox_height` to set when this stage is entered.
-
-**Returns:**
-
-Type | Description
----  | ---
-`Adipose.WeightStage` | Returns self for chaining
-
-**Example:**
-
-```lua
-stage:setHitboxHeight(1)
-```
-
-#### `setMotion()`
-
-Set the motion at this stage.
-
-This parameter primarily affects movement speed but also affects step and jump height.
-
-**Parameters:**
-
-Name | Type | Description
----  | ---  | ---
-motion | `Number` | Value of `pehkui:motion` to set when this stage is entered.
-
-**Returns:**
-
-Type | Description
----  | ---
-`Adipose.WeightStage` | Returns self for chaining
-
-**Example:**
-
-```lua
-stage:setMotion(1)
-```
-
-### Flags
-
-#### `setHitboxState()`
-
-Enable or disable commands to set `pehkui:hitbox_height` and `pehkui:hitbox_width` by Adipose.
-
-**Parameters:**
-
-Name | Type | Description
----  | ---  | ---
-state | `Boolean` | Enable (`true`) or disable (`false`)
-
-**Example:**
-
-```lua
-adipose.setHitboxState(false)
-```
-
-#### `setMotionState()`
-
-Enable or disable commands to set `pehkui:motion` by Adipose.
-
-**Parameters:**
-
-Name | Type | Description
----  | ---  | ---
-state | `Boolean` | Enable (`true`) or disable (`false`)
-
-**Example:**
-
-```lua
-adipose.setMotionState(false)
-```
-
-#### `setEyeHeightState()`
-
-Enable or disable commands to set `pehkui:eye_height` by Adipose.
-
-**Parameters:**
-
-Name | Type | Description
----  | ---  | ---
-state | `Boolean` | Enable (`true`) or disable (`false`)
-
-**Example:**
-
-```lua
-adipose.setEyeHeightState(false)
+stage:setScaling({
+  ['pehkui:eye_height'] = 1.1,
+  ['pehkui:hitbox_height'] = 1.1,
+  ['pehkui:hitbox_width'] = 1.1,
+  ['pehkui:motion'] = 1,
+  ...
+})
 ```
