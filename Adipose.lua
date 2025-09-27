@@ -20,6 +20,8 @@ adipose.scaling = true
 -- FUNCTIONS
 adipose.onWeightChange = function(_, _) end
 
+--- sets function that will be called when weight stage changes
+--- @param callback fun(index: number, granularity: number)
 function adipose.setOnWeightChange(callback)
     adipose.onWeightChange = callback
 end
