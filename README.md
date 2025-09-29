@@ -11,6 +11,7 @@ Figura library that adds Weight Gain functionality with animation support.
     - [Require](#require)
   - [Weight Management](#weight-management)
     - [Set Weight](#setweight)
+    - [Set On Weight Change](#setonweightchange)
     - [Set Current Weight Stage](#setcurrentweightstage)
     - [Adjust Weight By Amount](#adjustweightbyamount)
     - [Adjust Weight By Stage](#adjustweightbystage)
