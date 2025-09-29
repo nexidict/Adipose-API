@@ -7,8 +7,8 @@ adipose.maxWeight = 1000
 
 -- VARIABLES
 adipose.currentWeight = config:load("adipose.currentWeight") or adipose.minWeight
-adipose.granularWeight = 0
 adipose.currentWeightStage = config:load("adipose.currentWeightStage") or 1
+adipose.granularWeight = 0
 adipose.stuffed = 0
 
 local oldindex = nil
@@ -20,10 +20,10 @@ local timer = timerDuration
 adipose.scaling = true
 
 -- FUNCTIONS
-adipose.onWeightChange = function(_, _) end
+adipose.onWeightChange = function(_, _, _, _) end
 
---- sets function that will be called when weight stage changes
---- @param callback fun(index: number, granularity: number)
+--- Sets function that will be called when weight stage changes
+--- @param callback fun(weight: number, index: number, granularity: number, stuffed: number)
 function adipose.setOnWeightChange(callback)
     adipose.onWeightChange = callback
 end
@@ -167,19 +167,18 @@ function adipose.setWeight(amount, forceUpdate)
     amount = math.clamp(amount, adipose.minWeight, adipose.maxWeight)
 		
     local index, granularity = calculateProgressFromWeight(amount)
+    local stuffed = player:getSaturation()/20
 
     adipose.currentWeight = amount
     adipose.currentWeightStage = index
-
     adipose.granularWeight = granularity
+    adipose.stuffed = stuffed
 
     if oldindex ~= index or forceUpdate then
         oldindex = index
-        adipose.onWeightChange(index, granularity)
+        adipose.onWeightChange(amount, index, granularity, stuffed)
         setModelPartsVisibility(index)
     end
-	
-	local stuffed = player:getSaturation()/20
 	
 	setGranularity(index, granularity)
 	setStuffed(index, stuffed)

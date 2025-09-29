@@ -87,11 +87,34 @@ Weight is limited from `adipose.minWeight` (default 100) to `adipose.maxWeight` 
 Name | Type | Description
 ---  | ---  | ---
 amount | `Number` | Current weight value to set
+forceUpdate | `Boolean` | If `true`, forces the script ignore update conditions
 
 **Example:**
 
 ```lua
-adipose.setWeight(adipose.minWeight)
+adipose.setWeight(adipose.minWeight, false)
+```
+
+#### `setOnWeightChange()`
+
+Lambda function which allows to write custom behavior upon weight stage changes.
+
+**Paramters:**
+
+Name | Type | Description
+---  | ---  | ---
+weight | `Number` | Total weight value
+index | `Number` | Weight stage index
+granularity | `Number` | Granularity progress
+stuffed | `Number` | Stuffed progress
+
+**Example:**
+
+```lua
+adipose.setOnWeightChange(function (weight, index, granularity stuffed)
+  -- Update UI, set Pehkui scaling, play sounds...
+  ...
+end)
 ```
 
 #### `setCurrentWeightStage()`
