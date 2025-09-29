@@ -167,7 +167,7 @@ function adipose.setWeight(amount, forceUpdate)
     amount = math.clamp(amount, adipose.minWeight, adipose.maxWeight)
 		
     local index, granularity = calculateProgressFromWeight(amount)
-    local stuffed = player:getSaturation()/20
+    local stuffed = player:isLoaded() and player:getSaturation()/20 or 0
 
     adipose.currentWeight = amount
     adipose.currentWeightStage = index

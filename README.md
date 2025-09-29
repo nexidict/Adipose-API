@@ -93,7 +93,7 @@ forceUpdate | `Boolean` | If `true`, forces the script ignore update conditions
 **Example:**
 
 ```lua
-adipose.setWeight(adipose.minWeight, false)
+adipose.setWeight(adipose.minWeight)
 ```
 
 #### `setOnWeightChange()`
